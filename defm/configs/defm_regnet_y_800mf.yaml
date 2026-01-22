@@ -1,0 +1,3 @@
+arch: regnet_y_800mf
+out_channels: 128
+

@@ -1,0 +1,13 @@
+arch: vit_large
+patch_size: 14
+in_chans: 3
+layerscale: 1.0e-05
+ffn_layer: swiglufused
+block_chunks: 4
+qkv_bias: true
+proj_bias: true
+ffn_bias: true
+num_register_tokens: 0
+interpolate_antialias: false
+interpolate_offset: 0.1
+global_crops_size: 224

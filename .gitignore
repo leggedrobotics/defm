@@ -1,0 +1,48 @@
+# --- Python / Build ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.venv
+build/
+develop-eggs/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- DeFM Specific ---
+# Ignore raw large checkpoints, but we can track the folder
+weights/*.pth
+!weights/.gitkeep
+
+# --- Jupyter Notebook ---
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# --- OS / IDE ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.vscode/
+.idea/
+
+# --- Large Files ---
+*.log
+*.swp
+*.zip
+*.tar.gz

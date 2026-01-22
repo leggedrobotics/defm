@@ -1,0 +1,12 @@
+torch>=2.0.0
+torchvision
+numpy<2.0.0
+opencv-python
+omegaconf
+huggingface_hub
+pillow
+scikit-learn
+matplotlib
+jupyter
+ipykernel
+tqdm

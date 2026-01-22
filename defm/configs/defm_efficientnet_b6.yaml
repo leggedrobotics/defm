@@ -1,0 +1,3 @@
+arch: efficientnet_b6
+out_channels: 256
+
