@@ -1,4 +1,4 @@
-dependencies = ["torch", "omegaconf", "huggingface_hub", "torchvision", "numpy<2.0.0"]
+dependencies = ["torch", "omegaconf", "huggingface_hub", "torchvision", "numpy"]
 from defm.model_factory import create_defm_model
 import pathlib
 

@@ -60,7 +60,7 @@ Load via **TorchHub** for easy integration:
 import torch
 
 # Load the 307M Parameter Foundation Model
-model = torch.hub.load('leggedrobotics/defm', 'defm_vit_l14', pretrained=True)
+model = torch.hub.load('leggedrobotics/defm:main', 'defm_vit_l14', pretrained=True)
 model.eval().to("cuda")
 ```
 
