@@ -1,4 +1,4 @@
-# DeFM: Depth Foundation Model for Robotics
+# DeFM: Learning Foundation Representations from Depth for Robotics
 
 <div align="center">
 
