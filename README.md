@@ -14,6 +14,8 @@
 
 **DeFM** (Depth Foundation Model) is a vision backbone trained on **60M depth images** via self-distillation. It is engineered for robotic perception, providing metric-aware representations that excel in sim-to-real transfer and cross-sensor generalization.
 
+TL;DR - A DINO-style encoder, but for depth image inputs.
+
 ## 🌟 Key Features
 - **Large-Scale Pretraining**: We pretrain on our curated dataset of 60 M depth images using self-distillation.
 - **Semantic Awareness**: DeFM learns not only robust geometric priors but also semantically rich features from just depth images.
@@ -48,6 +50,7 @@ pip install -e .
 
 ---
 
+<a id="quick-start"></a>
 ## 🚀 Quick Start
 
 ### 1. Loading the Model
@@ -57,7 +60,7 @@ Load via **TorchHub** for easy integration:
 import torch
 
 # Load the 307M Parameter Foundation Model
-model = torch.hub.load('your-github-username/defm', 'defm_vit_l14', pretrained=True)
+model = torch.hub.load('leggedrobotics/defm', 'defm_vit_l14', pretrained=True)
 model.eval().to("cuda")
 ```
 
@@ -68,15 +71,17 @@ DeFM requires depth maps to be processed into our metric-aware 3-channel format.
 from defm import preprocess_depth_image
 
 # Depth needs to be in meters (numpy array, tensor or PIL image)
-tensor = preprocess_depth_image(metric_depth, target_size=518, patch_size=14)
+normalized_depth = preprocess_depth_image(metric_depth, target_size=518, patch_size=14)
 ```
 
 ### 3. Inference
 ```python
-from defm import preprocess_depth_image
+with torch.no_grad():
+    output = model.get_intermediate_layers(
+        normalized_depth, n=1, reshape=True, return_class_token=True)
 
-# Depth needs to be in meters (numpy array, tensor or PIL image)
-tensor = preprocess_depth_image(metric_depth, target_size=518, patch_size=14)
+spatial_tokens = output[0][0] # (B, C, H', W')
+class_token = output[0][1] # (B, C)
 ```
 
 ---
@@ -112,11 +117,13 @@ The following table provides a comprehensive overview of the DeFM model family, 
 ## 📖 Citation
 If you find DeFM useful for your research, please cite our paper:
 
-```bibtex
-@article{patel2026defm,
-  title={DeFM: Learning Foundation Representations from Depth for Robotics},
-  author={Patel, Manthan and Frey, Jonas and Mittal, Mayank and Yang, Fan and Hansson, Alexander and Bar, Amir and Cadena, Cesar and Hutter, Marco},
-  journal={arXiv preprint},
-  year={2026}
+```
+@misc{patel2026defm,
+  title         = {DeFM: Learning Foundation Representations from Depth for Robotics},
+  author        = {Patel, Manthan and Frey, Jonas and Mittal, Mayank and Yang, Fan and Hansson, Alexander and Bar, Amir and Cadena, Cesar and Hutter, Marco},
+  year          = {2026},
+  archivePrefix = {arXiv},
+  eprint        = {XXXX.XXXXX},
+  primaryClass  = {cs.RO}
 }
 ```
