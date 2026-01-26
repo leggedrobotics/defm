@@ -5,9 +5,12 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/get-started/locally/)
 [![uv Managed](https://img.shields.io/badge/uv-managed-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-orange?style=for-the-badge)](https://huggingface.co/leggedrobotics/defm)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg?style=for-the-badge)](https://opensource.org/licenses/Apache-2.0)
 [![Arxiv](https://img.shields.io/badge/arXiv-TODO-B31B1B.svg?style=for-the-badge)](TODO-link)
-[![Webpage](https://img.shields.io/badge/Webpage-leggedrobotics.github.io/defm-yellow.svg?style=for-the-badge&logo=google-chrome&logoColor=white)](https://leggedrobotics.github.io/defm)
+[![Webpage](https://img.shields.io/badge/Webpage-de--fm.github.io-yellow.svg?style=for-the-badge&logo=google-chrome&logoColor=white)](https://de-fm.github.io)
+[![GitHub](https://img.shields.io/badge/GitHub-Code-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/leggedrobotics/defm)
+
 </div>
 
 ---
@@ -127,3 +130,9 @@ If you find DeFM useful for your research, please cite our paper:
   primaryClass  = {cs.RO}
 }
 ```
+
+## Acknowledgement
+
+We would like to thank the researchers and developers of the [DINOv2](https://github.com/facebookresearch/dinov2) repository for their excellent open-source work, which served as the foundation for our implementation.
+
+This work was supported as part of the Swiss AI Initiative by a grant from the Swiss National Supercomputing Centre (CSCS) under project ID a144 on Alps. This work was also supported by the Luxembourg National Research Fund (Ref. 18990533), and the Swiss National Science Foundation (SNSF) through projects No. 200021E_229503 and No. 227617.
