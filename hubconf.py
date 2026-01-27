@@ -1,3 +1,8 @@
+# Copyright (c) 2026, ETH Zurich, Manthan Patel
+#
+# This source code is licensed under the Apache License, Version 2.0
+# found in the LICENSE file in the root directory of this source tree.
+
 dependencies = ["torch", "omegaconf", "huggingface_hub", "torchvision", "numpy"]
 from defm.model_factory import create_defm_model
 import pathlib
