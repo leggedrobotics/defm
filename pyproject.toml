@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "defm"
 version = "0.1.0"
@@ -17,3 +21,6 @@ dependencies = [
     "torchvision>=0.24.1",
     "tqdm>=4.67.1",
 ]
+
+[tool.setuptools.packages.find]
+include = ["defm", "defm.*"]
