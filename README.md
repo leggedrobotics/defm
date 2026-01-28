@@ -7,7 +7,7 @@
 [![uv Managed](https://img.shields.io/badge/uv-managed-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-orange?style=for-the-badge)](https://huggingface.co/leggedrobotics/defm)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg?style=for-the-badge)](https://opensource.org/licenses/Apache-2.0)
-[![Arxiv](https://img.shields.io/badge/arXiv-TODO-B31B1B.svg?style=for-the-badge)](TODO-link)
+[![Arxiv](https://img.shields.io/badge/arXiv-2601.18923v1-B31B1B.svg?style=for-the-badge)]([https://arxiv.org/abs/2601.18923v1](https://arxiv.org/abs/2601.18923v1))
 [![Webpage](https://img.shields.io/badge/Webpage-de--fm.github.io-yellow.svg?style=for-the-badge&logo=google-chrome&logoColor=white)](https://de-fm.github.io)
 [![GitHub](https://img.shields.io/badge/GitHub-Code-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/leggedrobotics/defm)
 
@@ -122,12 +122,13 @@ If you find DeFM useful for your research, please cite our paper:
 
 ```
 @misc{patel2026defm,
-  title         = {DeFM: Learning Foundation Representations from Depth for Robotics},
-  author        = {Patel, Manthan and Frey, Jonas and Mittal, Mayank and Yang, Fan and Hansson, Alexander and Bar, Amir and Cadena, Cesar and Hutter, Marco},
-  year          = {2026},
-  archivePrefix = {arXiv},
-  eprint        = {XXXX.XXXXX},
-  primaryClass  = {cs.RO}
+      title={DeFM: Learning Foundation Representations from Depth for Robotics}, 
+      author={Manthan Patel and Jonas Frey and Mayank Mittal and Fan Yang and Alexander Hansson and Amir Bar and Cesar Cadena and Marco Hutter},
+      year={2026},
+      eprint={2601.18923},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2601.18923}, 
 }
 ```
 
