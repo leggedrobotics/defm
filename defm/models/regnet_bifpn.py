@@ -7,11 +7,24 @@ from functools import partial
 import torch
 import torch.nn as nn
 from collections import OrderedDict
-from torchvision.models import regnet_y_400mf, regnet_y_800mf, regnet_y_1_6gf, regnet_y_3_2gf, regnet_y_8gf
-from torchvision.models import regnet_x_400mf, regnet_x_800mf, regnet_x_1_6gf, regnet_x_3_2gf, regnet_x_8gf
+from torchvision.models import (
+    regnet_y_400mf,
+    regnet_y_800mf,
+    regnet_y_1_6gf,
+    regnet_y_3_2gf,
+    regnet_y_8gf,
+)
+from torchvision.models import (
+    regnet_x_400mf,
+    regnet_x_800mf,
+    regnet_x_1_6gf,
+    regnet_x_3_2gf,
+    regnet_x_8gf,
+)
 from torchvision.models.feature_extraction import create_feature_extractor
 
 from .bifpn import BiFPN
+
 
 def replace_bn_with_gn(model, default_num_groups=32):
     """
@@ -37,8 +50,16 @@ def replace_bn_with_gn(model, default_num_groups=32):
 
     return model
 
+
 class RegNetBiFPN(nn.Module):
-    def __init__(self, backbone_name="regnet_y_400mf", out_channels=128, n_blocks=1, pretrained=True, gn_groups=32):
+    def __init__(
+        self,
+        backbone_name="regnet_y_400mf",
+        out_channels=128,
+        n_blocks=1,
+        pretrained=True,
+        gn_groups=32,
+    ):
         super().__init__()
 
         # pick backbone
@@ -84,10 +105,8 @@ class RegNetBiFPN(nn.Module):
         # final norm
         norm_layer = partial(nn.LayerNorm, eps=1e-6)
 
-
         self.norm_cls = norm_layer(embed_dim)
         self.norm_patch = norm_layer(out_channels)
-
 
     def forward(self, x, norm=True):
         # backbone outputs: raw C3, C4, C5
@@ -142,22 +161,32 @@ class RegNetBiFPN(nn.Module):
             "global_backbone": global_feat_backbone,
             "dense_feats": dense_feats,
         }
-    
-if __name__ == "__main__":
 
+
+if __name__ == "__main__":
     backbones_x = [
-        "regnet_x_400mf", "regnet_x_800mf", "regnet_x_1_6gf", "regnet_x_3_2gf", "regnet_x_8gf"
+        "regnet_x_400mf",
+        "regnet_x_800mf",
+        "regnet_x_1_6gf",
+        "regnet_x_3_2gf",
+        "regnet_x_8gf",
     ]
 
     backbones_y = [
-        "regnet_y_400mf", "regnet_y_800mf", "regnet_y_1_6gf", "regnet_y_3_2gf", "regnet_y_8gf"
+        "regnet_y_400mf",
+        "regnet_y_800mf",
+        "regnet_y_1_6gf",
+        "regnet_y_3_2gf",
+        "regnet_y_8gf",
     ]
 
     out_channels = [64, 128, 256, 256, 256]
 
     for i, backbone in enumerate(backbones_y):
         print(f"\nTesting backbone: {backbone}")
-        model = RegNetBiFPN(backbone_name=backbone, out_channels=out_channels[i], n_blocks=1)
+        model = RegNetBiFPN(
+            backbone_name=backbone, out_channels=out_channels[i], n_blocks=1
+        )
         x = torch.randn(1, 3, 40, 64)
         outputs = model(x)
         cls = outputs["global_backbone"]
@@ -166,13 +195,19 @@ if __name__ == "__main__":
         for k, v in dense_feats.items():
             print(k, v.shape)
 
-        print(f"Total params: {sum(p.numel() for p in model.parameters())/1e6:.2f}M")
-        print(f"Backbone params: {sum(p.numel() for p in model.backbone.parameters())/1e6:.2f}M")
-        print(f"BiFPN params: {sum(p.numel() for p in model.fpn.parameters())/1e6:.2f}M")
+        print(f"Total params: {sum(p.numel() for p in model.parameters()) / 1e6:.2f}M")
+        print(
+            f"Backbone params: {sum(p.numel() for p in model.backbone.parameters()) / 1e6:.2f}M"
+        )
+        print(
+            f"BiFPN params: {sum(p.numel() for p in model.fpn.parameters()) / 1e6:.2f}M"
+        )
 
     for i, backbone in enumerate(backbones_x):
         print(f"\nTesting backbone: {backbone}")
-        model = RegNetBiFPN(backbone_name=backbone, out_channels=out_channels[i], n_blocks=1)
+        model = RegNetBiFPN(
+            backbone_name=backbone, out_channels=out_channels[i], n_blocks=1
+        )
         x = torch.randn(1, 3, 256, 256)
         outputs = model(x)
         cls = outputs["global_backbone"]
@@ -181,6 +216,10 @@ if __name__ == "__main__":
         for k, v in dense_feats.items():
             print(k, v.shape)
 
-        print(f"Total params: {sum(p.numel() for p in model.parameters())/1e6:.2f}M")
-        print(f"Backbone params: {sum(p.numel() for p in model.backbone.parameters())/1e6:.2f}M")
-        print(f"BiFPN params: {sum(p.numel() for p in model.fpn.parameters())/1e6:.2f}M")
+        print(f"Total params: {sum(p.numel() for p in model.parameters()) / 1e6:.2f}M")
+        print(
+            f"Backbone params: {sum(p.numel() for p in model.backbone.parameters()) / 1e6:.2f}M"
+        )
+        print(
+            f"BiFPN params: {sum(p.numel() for p in model.fpn.parameters()) / 1e6:.2f}M"
+        )

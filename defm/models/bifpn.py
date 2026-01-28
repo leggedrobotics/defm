@@ -11,6 +11,7 @@ from collections import OrderedDict
 
 class WeightedFusion(nn.Module):
     """Learnable weighted sum for BiFPN feature fusion."""
+
     def __init__(self, n_inputs):
         super().__init__()
         self.weights = nn.Parameter(torch.ones(n_inputs, dtype=torch.float32))
@@ -28,11 +29,20 @@ class BiFPNLayer(nn.Module):
         self.n_levels = n_levels
 
         # fusion modules
-        self.fuse_topdown = nn.ModuleList([WeightedFusion(2) for _ in range(n_levels - 1)])
-        self.fuse_bottomup = nn.ModuleList([WeightedFusion(2) for _ in range(n_levels - 1)])
+        self.fuse_topdown = nn.ModuleList(
+            [WeightedFusion(2) for _ in range(n_levels - 1)]
+        )
+        self.fuse_bottomup = nn.ModuleList(
+            [WeightedFusion(2) for _ in range(n_levels - 1)]
+        )
 
         # convs for smoothing after fusion
-        self.convs = nn.ModuleList([nn.Conv2d(out_channels, out_channels, 3, padding=1) for _ in range(n_levels)])
+        self.convs = nn.ModuleList(
+            [
+                nn.Conv2d(out_channels, out_channels, 3, padding=1)
+                for _ in range(n_levels)
+            ]
+        )
 
     def forward(self, feats):
         # feats: list of feature maps [P3 (/8), P4 (/16), ..., Pn]
@@ -41,7 +51,9 @@ class BiFPNLayer(nn.Module):
         td_feats = [None] * self.n_levels
         td_feats[-1] = feats[-1]  # top stays
         for i in range(self.n_levels - 2, -1, -1):
-            up = F.interpolate(td_feats[i + 1], size=feats[i].shape[-2:], mode="nearest")
+            up = F.interpolate(
+                td_feats[i + 1], size=feats[i].shape[-2:], mode="nearest"
+            )
             td_feats[i] = self.fuse_topdown[i]([feats[i], up])
 
         # --- Bottom-up pass ---
@@ -59,8 +71,12 @@ class BiFPNLayer(nn.Module):
 class BiFPN(nn.Module):
     def __init__(self, in_channels_list, out_channels, n_blocks=1):
         super().__init__()
-        self.proj = nn.ModuleList([nn.Conv2d(c, out_channels, 1) for c in in_channels_list])
-        self.blocks = nn.ModuleList([BiFPNLayer(out_channels, len(in_channels_list)) for _ in range(n_blocks)])
+        self.proj = nn.ModuleList(
+            [nn.Conv2d(c, out_channels, 1) for c in in_channels_list]
+        )
+        self.blocks = nn.ModuleList(
+            [BiFPNLayer(out_channels, len(in_channels_list)) for _ in range(n_blocks)]
+        )
 
     def forward(self, inputs: OrderedDict):
         # Project backbone features to same channels
