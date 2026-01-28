@@ -7,7 +7,7 @@
 [![uv Managed](https://img.shields.io/badge/uv-managed-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-orange?style=for-the-badge)](https://huggingface.co/leggedrobotics/defm)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg?style=for-the-badge)](https://opensource.org/licenses/Apache-2.0)
-[![Arxiv](https://img.shields.io/badge/arXiv-2601.18923v1-B31B1B.svg?style=for-the-badge)]([https://arxiv.org/abs/2601.18923v1](https://arxiv.org/abs/2601.18923v1))
+[![Arxiv](https://img.shields.io/badge/arXiv-2601.18923v1-B31B1B.svg?style=for-the-badge)](https://arxiv.org/abs/2601.18923v1)
 [![Webpage](https://img.shields.io/badge/Webpage-de--fm.github.io-yellow.svg?style=for-the-badge&logo=google-chrome&logoColor=white)](https://de-fm.github.io)
 [![GitHub](https://img.shields.io/badge/GitHub-Code-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/leggedrobotics/defm)
 
