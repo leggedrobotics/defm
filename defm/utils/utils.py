@@ -7,7 +7,7 @@ import torch
 import numpy as np
 from PIL import Image
 from typing import Union, Tuple, Optional
-import torchvision.transforms as tt
+import torchvision.transforms.v2 as tt
 import math
 
 DEFM_MEAN = [0.248880, 0.495620, 0.492858]
