@@ -7,7 +7,7 @@ import torch
 import numpy as np
 from PIL import Image
 from typing import Union, Tuple, Optional
-import torchvision.transforms as tt
+import torchvision.transforms.v2 as tt
 import math
 
 DEFM_MEAN = [0.248880, 0.495620, 0.492858]
@@ -177,6 +177,7 @@ def preprocess_depth_dav2(
 def preprocess_depth_batch(
     input_batch: Union[np.ndarray, torch.Tensor],
     target_size: Optional[Union[int, Tuple[int, int]]] = None,
+    cnn_padding: Optional[bool] = False,
     patch_size: Optional[int] = None,
     max_depth_c1: float = 100.0,
     max_depth_c2: float = 9.0,
@@ -259,5 +260,11 @@ def preprocess_depth_batch(
 
     norm_transform = make_norm_transform(final_h, final_w, to_tensor=False)
     x = norm_transform(x)
+
+    if cnn_padding:
+        # Pad to next multiple of 32 (Since this is needed for the BiFPNs)
+        pad_h = (32 - (final_h % 32)) % 32
+        pad_w = (32 - (final_w % 32)) % 32
+        x = torch.nn.functional.pad(x, (0, pad_w, 0, pad_h), mode="constant", value=0.0)
 
     return x

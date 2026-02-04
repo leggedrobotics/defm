@@ -2,8 +2,8 @@
 
 <div align="center">
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/get-started/locally/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![PyTorch 2.4+](https://img.shields.io/badge/PyTorch-2.4+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/get-started/locally/)
 [![uv Managed](https://img.shields.io/badge/uv-managed-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-orange?style=for-the-badge)](https://huggingface.co/leggedrobotics/defm)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg?style=for-the-badge)](https://opensource.org/licenses/Apache-2.0)
@@ -101,7 +101,7 @@ class_token = output[0][1] # (B, C)
 
 The following table provides a comprehensive overview of the DeFM model family, including architectural parameters, inference latency across training and deployment hardware (224x224), and performance on the ImageNet-1k-Depth benchmark.
 
-| Model | Params (M) | RTX 4090 (ms) | Jetson Orin (ms) | Top-5 KNN (%) | Linear Prob (%) | Checkpoint |
+| Model | Params (M) | RTX 4090 BS-128 (ms) | Jetson Orin (ms) | Top-5 KNN (%) | Linear Prob (%) | Checkpoint |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **DeFM ViT-L/14** | 307.0 | 624.91 | 72.82 | 84.79 | 71.72 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_l14.pth) |
 | **DeFM ViT-S/14** | 22.1 | 63.76 | 11.92 | 78.06 | 61.54 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_s14.pth) |
@@ -130,6 +130,24 @@ If you find DeFM useful for your research, please cite our paper:
       primaryClass={cs.RO},
       url={https://arxiv.org/abs/2601.18923}, 
 }
+```
+
+## Contribution Guidelines
+
+<!-- For documentation, we adopt the [Google Style Guide](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) for docstrings. Please make sure that your code is well-documented and follows the guidelines. -->
+
+We use the following tools for maintaining code quality:
+
+- [pre-commit](https://pre-commit.com/): Runs a list of formatters and linters over the codebase.
+- [ruff](https://github.com/astral-sh/ruff): An extremely fast Python linter and code formatter, written in Rust.
+
+Please check [here](https://pre-commit.com/#install) for instructions to set these up. To run over the entire repository, please execute the following command in the terminal:
+
+```bash
+# for installation (only once)
+pre-commit install
+# for running
+pre-commit run --all-files
 ```
 
 ## Acknowledgement

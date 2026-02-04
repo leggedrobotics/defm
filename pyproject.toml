@@ -4,10 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "defm"
-version = "0.1.0"
+version = "1.0.1"
+keywords = ["computer-vision", "foundation-model", "robotics"]
+maintainers = [
+  { name="Manthan Patel", email="patelm@ethz.ch" },
+]
+authors = [
+  { name="Manthan Patel", email="patelm@ethz.ch" },
+]
 description = "DeFM: Learning Foundation Representations from Depth for Robotics"
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { file = "LICENSE" }
 requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "huggingface-hub>=0.36.0",
     "ipykernel>=6.29.5",
@@ -18,10 +30,17 @@ dependencies = [
     "opencv-python>=4.11.0.86",
     "pillow>=10.4.0",
     "scikit-learn>=1.3.2",
-    "torch>=2.0.0",
-    "torchvision>=0.20.1",
-    "tqdm>=4.67.1",
+    "torch>=2.4.1",
+    "torchvision>=0.19.1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/leggedrobotics/rsl_rl"
+Issues = "https://github.com/leggedrobotics/rsl_rl/issues"
+
 [tool.setuptools.packages.find]
-include = ["defm", "defm.*"]
+where = ["."]
+include = ["defm*"]
+
+[tool.setuptools.package-data]
+"defm" = ["config/*", "licenses/*"]
