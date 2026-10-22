@@ -3,6 +3,7 @@
 # This source code is licensed under the Apache License, Version 2.0
 # found in the LICENSE file in the root directory of this source tree.
 
+import json
 import torch
 import pathlib
 from omegaconf import OmegaConf
@@ -23,12 +24,30 @@ def get_defm_config(model_name: str):
     return OmegaConf.load(model_path)
 
 
+def get_hub_config(model_name: str):
+    """Architecture config of a variant from the Hub's root config.json.
+
+    config.json is the file the Hugging Face Hub counts as a model download, so fetching it here is what makes
+    downloads of the DeFM weights show up on the model page. Falls back to the packaged YAML when offline.
+    """
+    try:
+        path = hf_hub_download(repo_id=HF_REPO_ID, filename="config.json")
+        with open(path) as f:
+            return OmegaConf.create(json.load(f)["variants"][model_name])
+    except Exception as e:  # offline, or a variant not listed in the Hub config
+        print(
+            f"Could not read {model_name} from the {HF_REPO_ID} config.json ({e}); using the packaged config."
+        )
+        return get_defm_config(model_name)
+
+
 def create_defm_model(model_name, pretrained=False, pretrained_path=None):
     """
     Builds the DeFM model and loads weights.
     Supports ViT-L/14 (307M) and ViT-S/14 (22M) variants
     """
-    cfg = get_defm_config(model_name)
+    downloading = pretrained and not pretrained_path
+    cfg = get_hub_config(model_name) if downloading else get_defm_config(model_name)
 
     if "vit" in cfg.arch:
         vit_kwargs = dict(
