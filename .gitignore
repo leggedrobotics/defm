@@ -46,3 +46,5 @@ weights/*.pth
 *.swp
 *.zip
 *.tar.gz
+# --- Benchmarks ---
+results/
