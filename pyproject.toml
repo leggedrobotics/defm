@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "defm"
-version = "1.0.1"
+version = "1.1.0"
 keywords = ["computer-vision", "foundation-model", "robotics"]
 maintainers = [
   { name="Manthan Patel", email="patelm@ethz.ch" },
@@ -35,8 +35,22 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/leggedrobotics/rsl_rl"
-Issues = "https://github.com/leggedrobotics/rsl_rl/issues"
+Homepage = "https://github.com/leggedrobotics/defm"
+Issues = "https://github.com/leggedrobotics/defm/issues"
+
+[project.optional-dependencies]
+# Benchmarks (classification + segmentation, see benchmarks/README.md). Run them from the repository root.
+# transformers is pinned below 5: Theia's remote code does not load with transformers 5.
+benchmarks = [
+    "transformers>=4.56,<5; python_version >= '3.9'",
+    "safetensors",
+    "timm",
+    "einops",
+    "pyarrow",
+    "h5py",   # scripts/datasets/convert_sunrgbd.py --source official
+    "scipy",
+]
+test = ["pytest"]
 
 [tool.setuptools.packages.find]
 where = ["."]

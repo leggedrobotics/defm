@@ -14,7 +14,7 @@ try:
     __version__ = version("defm")
 except PackageNotFoundError:
     # fallback for source checkout / editable installs — keep in sync with pyproject.toml
-    __version__ = "1.0.1"
+    __version__ = "1.1.0"
 
 # Preprocessing helpers at the top level, as used in the README (`from defm import preprocess_depth_image`)
 from .utils import (  # noqa: E402,F401
