@@ -30,11 +30,11 @@ TL;DR - A DINO-style encoder, but for depth image inputs.
 
 ## 🛠️ Installation
 
-To use DeFM as a backbone in your own projects without cloning this repository, ensure you have the following prerequisites installed:
+To use DeFM as a backbone in your own projects, install the package from PyPI:
 ```bash
-pip install torch torchvision numpy huggingface_hub omegaconf
+pip install defm
 ```
-and directly jump to [Quick Start](#quick-start). Otherwise, below you can find instructions to install the DeFM module for using the notebooks or for local development.
+and directly jump to [Quick Start](#quick-start). Loading through TorchHub only needs `torch torchvision numpy huggingface_hub omegaconf`. Otherwise, below you can find instructions to install the DeFM module for using the notebooks or for local development.
 
 ### Using uv (Fastest)
 ```bash
@@ -91,9 +91,10 @@ class_token = output[0][1] # (B, C)
 
 ## 📂 Project Structure
 * `defm/`: Main package containing model factory, architectures, and utils.
-* `notebooks/`: Demo notebooks for **Semantic PCA Visualization** and **Inference Scripts** for CNNs and ViTs.
-* `classification/`: Scripts and packages to reproduce the classification results [TODO]
-* `segmentation/`: Scripts and packages to reproduce the segmentation results [TODO]
+* `scripts/notebooks/`: Demo notebooks for **Semantic PCA Visualization** and **Inference Scripts** for CNNs and ViTs.
+* `benchmarks/`: Classification and segmentation benchmarks for DeFM and the baselines (see [Benchmarks](#benchmarks)).
+* `scripts/datasets/`: Scripts to build the benchmark datasets from their official releases.
+* `tests/`: Smoke tests (`pytest tests`).
 
 ---
 
@@ -115,6 +116,25 @@ The following table provides a comprehensive overview of the DeFM model family, 
 | **DeFM RegNetY-1.6GF** | 12.4 | 44.25 | 41.82 | 76.21 | 57.28 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_1_6gf.pth) |
 | **DeFM RegNetY-800MF** | 6.3 | 25.21 | 24.16 | 74.91 | 57.03 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_800mf.pth) |
 | **DeFM RegNetY-400MF** | 4.1 | 17.27 | 25.17 | 72.87 | 50.51 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_400mf.pth) |
+---
+
+<a id="benchmarks"></a>
+## 📏 Benchmarks
+
+[`benchmarks/`](benchmarks/README.md) reproduces the linear-probe evaluations of the paper for DeFM and all image
+baselines (DINOv2, DINOv3, Depth Anything V2, C-RADIOv3, Theia), loading every model from its official
+Hugging Face weights:
+
+```bash
+pip install -e ".[benchmarks]"
+python -m benchmarks.segmentation --encoder defm_vit_l14 --dataset tartanground   # ScanNet, SUN RGB-D, OFFSED, TartanGround, GraspNet
+python -m benchmarks.classification --encoder defm_vit_s14 --eval knn linear     # ImageNet-1k-Depth
+```
+
+TartanGround, GraspNet-1Billion and ImageNet-1k-Depth are downloaded from the Hub; ScanNet, SUN RGB-D and OFFSED
+are built from their official releases with the scripts in `scripts/datasets/`. See the
+[benchmark README](benchmarks/README.md) for datasets, protocol and results.
+
 ---
 
 ## 📖 Citation
