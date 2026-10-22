@@ -265,11 +265,15 @@ def test_encoder_registry():
 )
 def test_encoder_forward(name):
     from benchmarks.encoders import build_encoder, center_pad
+    from benchmarks.preprocess import encode_metric_depth, normalize
 
     enc = build_encoder(name)
-    x, _ = center_pad(torch.randn(1, 3, 100, 130), enc.pad_multiple)
+    depth = np.random.default_rng(0).uniform(0.5, 8.0, (100, 130)).astype(np.float32)
+    x = normalize(encode_metric_depth(depth, enc.input_norm), enc.input_norm)[None]
+    x, _ = center_pad(x, enc.pad_multiple)
     with torch.no_grad():
         g, dense = enc(x)
     h, w = x.shape[-2] // enc.patch_size, x.shape[-1] // enc.patch_size
-    assert g.shape == (1, enc.embed_dim) and dense.shape == (1, h * w, enc.embed_dim)
+    # the global feature can be wider than the dense one (DeFM CNNs: 512 vs 128, RADIO summary: 3072 vs 1024)
+    assert g.dim() == 2 and len(g) == 1 and dense.shape == (1, h * w, enc.embed_dim)
     assert torch.isfinite(g).all() and torch.isfinite(dense).all()
