@@ -15,3 +15,11 @@ try:
 except PackageNotFoundError:
     # fallback for source checkout / editable installs — keep in sync with pyproject.toml
     __version__ = "1.0.1"
+
+# Preprocessing helpers at the top level, as used in the README (`from defm import preprocess_depth_image`)
+from .utils import (  # noqa: E402,F401
+    convert_to_3channel_metric,
+    preprocess_depth_batch,
+    preprocess_depth_dav2,
+    preprocess_depth_image,
+)
