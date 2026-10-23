@@ -108,10 +108,11 @@ class ImageNetDepth(IterableDataset):
         info = get_worker_info()
         if info is not None:
             groups = groups[info.id :: info.num_workers]
-        handles = {}
         for path, g in groups:
-            pf = handles.setdefault(path, pq.ParquetFile(path))
-            table = pf.read_row_group(g, columns=["label", "depth"])
+            # Opened per row group: an open ParquetFile keeps the buffers of its last read (~16 MB), which adds up
+            # to several GB per worker if the shards are kept open over an epoch.
+            with pq.ParquetFile(path) as pf:
+                table = pf.read_row_group(g, columns=["label", "depth"])
             labels = table.column("label").to_pylist()
             pngs = table.column("depth").combine_chunks().field("bytes").to_pylist()
             del table  # only the Python copies are used below
