@@ -36,14 +36,15 @@ def extract_global(encoder, ds, batch_size, workers, dtype):
     for i, (x, y) in enumerate(_loader(ds, batch_size, workers)):
         with torch.autocast("cuda", dtype=dtype, enabled=dtype != torch.float32):
             g, _ = encoder(x.cuda(non_blocking=True))
-        feats.append(F.normalize(g.float(), dim=1))
+        # gathered on the CPU: concatenating on the GPU would briefly hold two copies (2 x 16 GB for RADIO's 3072-d)
+        feats.append(F.normalize(g.float(), dim=1).cpu())
         labels.append(y)
         if i % 500 == 0:
             print(
                 f"    {i * batch_size}/{len(ds)}  {(i + 1) * batch_size / (time.time() - t0):.0f} img/s",
                 flush=True,
             )
-    return torch.cat(feats), torch.cat(labels).cuda()
+    return torch.cat(feats).cuda(), torch.cat(labels).cuda()
 
 
 @torch.no_grad()
