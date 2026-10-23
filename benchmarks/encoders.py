@@ -12,7 +12,6 @@ Every encoder exposes the same interface:
     enc.embed_dim     -> channel dimension of global and dense features
     enc(x)            -> (global [B, C], dense [B, h*w, C]) for an input already padded to pad_multiple
     enc.last_blocks(x, n) -> [(global, dense)] for the last n blocks (linear-probe classification)
-    enc.per_block     -> whether last_blocks has per-block outputs (otherwise only n=1 is available)
 
 DINOv2 and Depth Anything V2 weights are loaded into DeFM's own ViT (the original DINOv2 implementation),
 which keeps positional-embedding interpolation identical to the paper. transformers' Dinov2Model uses a
@@ -123,8 +122,7 @@ def build_encoder(name: str) -> nn.Module:
     }
     encoder = builders[spec.family]()
     encoder.name, encoder.input_norm = name, spec.input_norm
-    # The DeFM CNNs, RADIO and Theia only expose their final features
-    encoder.per_block = spec.family in {"defm_vit", "dinov2", "dav2", "dinov3"}
+    encoder.is_cnn = spec.family == "defm_cnn"
     # DINOv3 features degrade in float16 (kNN accuracy collapses); run it in bfloat16
     encoder.autocast_dtype = (
         torch.bfloat16 if spec.family == "dinov3" else torch.float16
@@ -323,9 +321,9 @@ class RadioEncoder(nn.Module):
         return out.summary, out.features
 
     def last_blocks(self, x, n: int):
-        if n != 1:
-            raise ValueError("RADIO only exposes its final features (n=1)")
-        return [self(x)]
+        # No per-block outputs: the final features are repeated, as in the paper's evaluation (one forward
+        # pass). For n=4 this scales the head's effective learning rate, which matters at the top of the grid.
+        return [self(x)] * n
 
 
 class TheiaEncoder(nn.Module):
@@ -385,9 +383,9 @@ class TheiaEncoder(nn.Module):
         return tokens.mean(dim=1), grid.flatten(2).transpose(1, 2)
 
     def last_blocks(self, x, n: int):
-        if n != 1:
-            raise ValueError("Theia only exposes its final features (n=1)")
-        return [self(x)]
+        # No per-block outputs: the final features are repeated, as in the paper's evaluation (one forward
+        # pass). For n=4 this scales the head's effective learning rate, which matters at the top of the grid.
+        return [self(x)] * n
 
 
 def center_pad(x: torch.Tensor, multiple: int) -> Tuple[torch.Tensor, Tuple[int, int]]:

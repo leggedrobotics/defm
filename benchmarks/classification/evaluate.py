@@ -145,7 +145,7 @@ def run_linear(
     dtype=torch.float16,
     lrs=LINEAR_LRS,
 ):
-    n_options = [1, 4] if encoder.per_block else [1]
+    n_options = [1] if encoder.is_cnn else [1, 4]
     train = ImageNetDepth(
         "train",
         encoder.input_norm,

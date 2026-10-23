@@ -137,7 +137,8 @@ from a confusion matrix accumulated over the whole test set.
 
 **Classification.** Center-cropped 224x224 inputs. kNN: cosine similarity on L2-normalized global features,
 temperature 0.07, k = 20 reported (DINOv2 protocol). Linear: linear heads on the class token (+ average-pooled patch
-tokens) of the last 1 or 4 blocks over a grid of 10 learning rates, SGD with cosine schedule, 3 epochs, random-crop
+tokens) of the last 1 or 4 blocks (DeFM CNNs: last only; C-RADIOv3 and Theia have no per-block outputs, so their
+final features are repeated) over a grid of 10 learning rates, SGD with cosine schedule, 3 epochs, random-crop
 and flip augmentation; the best head on the validation set is reported. The relative disparity is min-max normalized
 per image and converted with DeFM's MDE preprocessing (`defm.utils.preprocess_depth_dav2`).
 
