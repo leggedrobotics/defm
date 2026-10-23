@@ -260,6 +260,20 @@ def test_encoder_registry():
 
 
 @network
+def test_theia_fast_path_matches_processor():
+    """At 224x224, TheiaEncoder skips Theia's per-image CPU processor; the features must be identical."""
+    from benchmarks.encoders import build_encoder
+
+    enc = build_encoder("theia_s16")
+    x = torch.rand(2, 3, 224, 224)
+    x[0, :, 0, 0], x[0, :, 0, 1] = 0.0, 1.0
+    with torch.no_grad():
+        assert torch.equal(
+            enc.tokens(x), enc.model.forward_feature(x, do_rescale=False)
+        )
+
+
+@network
 @pytest.mark.parametrize(
     "name", __import__("benchmarks.encoders", fromlist=["ENCODERS"]).ENCODERS
 )

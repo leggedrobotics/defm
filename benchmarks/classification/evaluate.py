@@ -26,25 +26,29 @@ def _loader(ds, batch_size, workers):
         num_workers=workers,
         pin_memory=True,
         persistent_workers=False,
-        prefetch_factor=4 if workers else None,
     )
 
 
 @torch.no_grad()
 def extract_global(encoder, ds, batch_size, workers, dtype):
-    feats, labels, t0 = [], [], time.time()
+    # Filled in place on the CPU and moved to the GPU once: concatenating batches would briefly hold two copies
+    # (2 x 16 GB for RADIO's 3072-d features on ImageNet train).
+    feats, labels, n, t0 = None, torch.empty(len(ds), dtype=torch.long), 0, time.time()
     for i, (x, y) in enumerate(_loader(ds, batch_size, workers)):
         with torch.autocast("cuda", dtype=dtype, enabled=dtype != torch.float32):
             g, _ = encoder(x.cuda(non_blocking=True))
-        # gathered on the CPU: concatenating on the GPU would briefly hold two copies (2 x 16 GB for RADIO's 3072-d)
-        feats.append(F.normalize(g.float(), dim=1).cpu())
-        labels.append(y)
+        if feats is None:
+            feats = torch.empty(len(ds), g.shape[1])
+        feats[n : n + len(y)] = F.normalize(g.float(), dim=1).cpu()
+        labels[n : n + len(y)] = y
+        n += len(y)
         if i % 500 == 0:
             print(
                 f"    {i * batch_size}/{len(ds)}  {(i + 1) * batch_size / (time.time() - t0):.0f} img/s",
                 flush=True,
             )
-    return torch.cat(feats).cuda(), torch.cat(labels).cuda()
+    assert n == len(ds), (n, len(ds))
+    return feats.cuda(), labels.cuda()
 
 
 @torch.no_grad()
@@ -141,7 +145,7 @@ def run_linear(
     dtype=torch.float16,
     lrs=LINEAR_LRS,
 ):
-    n_options = [1] if encoder.is_cnn else [1, 4]
+    n_options = [1, 4] if encoder.per_block else [1]
     train = ImageNetDepth(
         "train",
         encoder.input_norm,

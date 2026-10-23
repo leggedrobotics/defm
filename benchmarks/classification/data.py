@@ -113,7 +113,8 @@ class ImageNetDepth(IterableDataset):
             pf = handles.setdefault(path, pq.ParquetFile(path))
             table = pf.read_row_group(g, columns=["label", "depth"])
             labels = table.column("label").to_pylist()
-            pngs = [d["bytes"] for d in table.column("depth").to_pylist()]
+            pngs = table.column("depth").combine_chunks().field("bytes").to_pylist()
+            del table  # only the Python copies are used below
             order = (
                 np.random.default_rng(self.seed + self.epoch + g).permutation(
                     len(labels)

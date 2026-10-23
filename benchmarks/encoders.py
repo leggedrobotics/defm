@@ -12,6 +12,7 @@ Every encoder exposes the same interface:
     enc.embed_dim     -> channel dimension of global and dense features
     enc(x)            -> (global [B, C], dense [B, h*w, C]) for an input already padded to pad_multiple
     enc.last_blocks(x, n) -> [(global, dense)] for the last n blocks (linear-probe classification)
+    enc.per_block     -> whether last_blocks has per-block outputs (otherwise only n=1 is available)
 
 DINOv2 and Depth Anything V2 weights are loaded into DeFM's own ViT (the original DINOv2 implementation),
 which keeps positional-embedding interpolation identical to the paper. transformers' Dinov2Model uses a
@@ -122,7 +123,8 @@ def build_encoder(name: str) -> nn.Module:
     }
     encoder = builders[spec.family]()
     encoder.name, encoder.input_norm = name, spec.input_norm
-    encoder.is_cnn = spec.family == "defm_cnn"
+    # The DeFM CNNs, RADIO and Theia only expose their final features
+    encoder.per_block = spec.family in {"defm_vit", "dinov2", "dav2", "dinov3"}
     # DINOv3 features degrade in float16 (kNN accuracy collapses); run it in bfloat16
     encoder.autocast_dtype = (
         torch.bfloat16 if spec.family == "dinov3" else torch.float16
@@ -321,8 +323,9 @@ class RadioEncoder(nn.Module):
         return out.summary, out.features
 
     def last_blocks(self, x, n: int):
-        # RADIO does not expose per-block summary tokens; repeated as in the paper's evaluation
-        return [self(x)] * n
+        if n != 1:
+            raise ValueError("RADIO only exposes its final features (n=1)")
+        return [self(x)]
 
 
 class TheiaEncoder(nn.Module):
@@ -330,34 +333,61 @@ class TheiaEncoder(nn.Module):
 
     def __init__(self, repo: str):
         super().__init__()
+        import sys
+
         from transformers import AutoModel
 
         self.model = AutoModel.from_pretrained(
             repo, trust_remote_code=True, revision=HF_REVISIONS[repo]
         )
+        self._handle_output = sys.modules[
+            type(self.model).__module__
+        ].handle_feature_output
+        processor = self.model.backbone.processor
+        self.register_buffer(
+            "mean",
+            torch.tensor(processor.image_mean).view(1, -1, 1, 1),
+            persistent=False,
+        )
+        self.register_buffer(
+            "std", torch.tensor(processor.image_std).view(1, -1, 1, 1), persistent=False
+        )
         self.patch_size = self.pad_multiple = 16
-        self.embed_dim = self.model.forward_feature(
-            torch.rand(1, 3, 224, 224), do_rescale=False
-        ).shape[-1]
+        self.embed_dim = self.tokens(torch.rand(1, 3, 224, 224)).shape[-1]
+
+    def tokens(self, x):
+        """Theia features [B, 196, C] of x in [0, 1]."""
+        # Theia's processor rejects anything outside [0, 1], incl. 1 + 1e-7 from an antialiased resize
+        x = x.clamp(0, 1)
+        if x.shape[-2:] != (224, 224):
+            return self.model.forward_feature(x, do_rescale=False)
+        # At 224x224 the processor's PIL resize is a copy, leaving: 8-bit quantization, then (x - mean) / std.
+        # Done here on the GPU with the processor's exact arithmetic instead of per image on the CPU.
+        q = (x.double() * 255).float().to(torch.uint8)
+        x = ((q.double() * (1 / 255)).float() - self.mean) / self.std
+        out = self.model.backbone.model(pixel_values=x, interpolate_pos_encoding=None)
+        return self._handle_output(
+            out.last_hidden_state, num_discard_tokens=self.model.num_reg_tokens
+        )
 
     def forward(self, x):
-        # Theia's processor rejects anything outside [0, 1], incl. 1 + 1e-7 from an antialiased resize
-        tokens = self.model.forward_feature(
-            x.clamp(0, 1), do_rescale=False
-        )  # [B, 196, C] on a 14x14 grid
+        tokens = self.tokens(x)  # [B, 196, C] on a 14x14 grid
         b, n, c = tokens.shape
         side = int(math.isqrt(n))
         grid = tokens.transpose(1, 2).reshape(b, c, side, side)
-        grid = F.interpolate(
-            grid,
-            size=(x.shape[2] // 16, x.shape[3] // 16),
-            mode="bilinear",
-            align_corners=False,
-        )
+        if x.shape[2] // 16 != side or x.shape[3] // 16 != side:
+            grid = F.interpolate(
+                grid,
+                size=(x.shape[2] // 16, x.shape[3] // 16),
+                mode="bilinear",
+                align_corners=False,
+            )
         return tokens.mean(dim=1), grid.flatten(2).transpose(1, 2)
 
     def last_blocks(self, x, n: int):
-        return [self(x)] * n
+        if n != 1:
+            raise ValueError("Theia only exposes its final features (n=1)")
+        return [self(x)]
 
 
 def center_pad(x: torch.Tensor, multiple: int) -> Tuple[torch.Tensor, Tuple[int, int]]:
