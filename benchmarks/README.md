@@ -162,14 +162,28 @@ Segmentation, test mIoU (%):
 | ResNet-34 | DeFM | 33.87 | 30.36 | 52.21 | 70.01 | 27.86 |
 | ResNet-18 | DeFM | 28.01 | 25.97 | 46.87 | 65.49 | 23.27 |
 
-ImageNet-1k-Depth classification, top-1 accuracy (%):
+ImageNet-1k-Depth classification, accuracy (%), kNN with k = 20:
 
-| Model | Encoder | kNN (k=20) | Linear |
-|---|---|---|---|
-| ViT-L/14 | DINOv2 | – | – |
-| ViT-L/16 | DINOv3 | – | – |
-| ViT-L/14 | **DeFM** | – | – |
-| ViT-S/14 | **DeFM** | 57.02 | – |
+| Model | Encoder | kNN top-1 | kNN top-5 | Linear top-1 |
+|---|---|---|---|---|
+| ViT-L/14 | DINOv2 | 61.32 | 81.51 | 68.90 |
+| ViT-L/16 | C-RADIOv3 | 55.87 | 77.57 | 63.99 |
+| ViT-L/16 | DINOv3 | **64.79** | 84.00 | 69.66 |
+| ViT-L/14 | **DeFM** | 64.76 | **85.42** | **72.76** |
+| DeiT-S/16 | Theia | 28.82 | 48.45 | 33.36 |
+| ViT-S/14 | DINOv2 | 48.10 | 69.63 | 54.97 |
+| ViT-S/16 | DINOv3 | 49.45 | 70.81 | 50.95 |
+| ViT-S/14 | **DeFM** | **57.02** | **79.37** | **62.74** |
+| ResNet-50 | DeFM | 54.87 | 78.93 | 62.56 |
+| ResNet-34 | DeFM | 49.20 | 73.84 | 54.78 |
+| ResNet-18 | DeFM | 46.73 | 70.93 | 51.57 |
+| RegNetY-1.6GF | DeFM | 54.81 | 77.96 | 58.88 |
+| RegNetY-800MF | DeFM | 53.33 | 76.43 | 58.62 |
+| RegNetY-400MF | DeFM | 50.92 | 74.43 | 51.80 |
+| EfficientNet-B6 | DeFM | 54.77 | 79.30 | 60.70 |
+| EfficientNet-B4 | DeFM | 51.96 | 76.45 | 56.24 |
+| EfficientNet-B2 | DeFM | 48.90 | 72.89 | 51.64 |
+| EfficientNet-B0 | DeFM | 45.81 | 69.54 | 47.17 |
 
 Re-running gives the same numbers up to run-to-run variation (within ~0.5 mIoU; up to ~1-2 on OFFSED, whose test
 set has 41 images).

@@ -104,18 +104,18 @@ The following table provides a comprehensive overview of the DeFM model family, 
 
 | Model | Params (M) | RTX 4090 BS-128 (ms) | Jetson Orin (ms) | Top-5 KNN (%) | Linear Prob (%) | Checkpoint |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **DeFM ViT-L/14** | 307.0 | 624.91 | 72.82 | 84.79 | 71.72 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_l14.pth) |
-| **DeFM ViT-S/14** | 22.1 | 63.76 | 11.92 | 78.06 | 61.54 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_s14.pth) |
-| **DeFM ResNet-50** | 26.2 | 69.39 | 17.79 | 77.63 | 61.54 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet50.pth) |
-| **DeFM ResNet-34** | 21.8 | 33.08 | 13.54 | 72.72 | 54.39 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet34.pth) |
-| **DeFM ResNet-18** | 11.7 | 21.06 | 8.67 | 69.69 | 50.58 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet18.pth) |
-| **DeFM EfficientNet-B6** | 28.98 | 150.98 | 54.11 | 77.81 | 59.23 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b6.pth) |
-| **DeFM EfficientNet-B4** | 14.16 | 86.51 | 39.67 | 74.74 | 54.73 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b4.pth) |
-| **DeFM EfficientNet-B2** | 4.95 | 46.12 | 28.37 | 71.51 | 50.32 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b2.pth) |
-| **DeFM EfficientNet-B0** | 3.01 | 29.39 | 21.04 | 67.98 | 46.17 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b0.pth) |
-| **DeFM RegNetY-1.6GF** | 12.4 | 44.25 | 41.82 | 76.21 | 57.28 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_1_6gf.pth) |
-| **DeFM RegNetY-800MF** | 6.3 | 25.21 | 24.16 | 74.91 | 57.03 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_800mf.pth) |
-| **DeFM RegNetY-400MF** | 4.1 | 17.27 | 25.17 | 72.87 | 50.51 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_400mf.pth) |
+| **DeFM ViT-L/14** | 307.0 | 624.91 | 72.82 | 85.42 | 72.76 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_l14.pth) |
+| **DeFM ViT-S/14** | 22.1 | 63.76 | 11.92 | 79.37 | 62.74 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_s14.pth) |
+| **DeFM ResNet-50** | 26.2 | 69.39 | 17.79 | 78.93 | 62.56 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet50.pth) |
+| **DeFM ResNet-34** | 21.8 | 33.08 | 13.54 | 73.84 | 54.78 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet34.pth) |
+| **DeFM ResNet-18** | 11.7 | 21.06 | 8.67 | 70.93 | 51.57 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet18.pth) |
+| **DeFM EfficientNet-B6** | 28.98 | 150.98 | 54.11 | 79.30 | 60.70 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b6.pth) |
+| **DeFM EfficientNet-B4** | 14.16 | 86.51 | 39.67 | 76.45 | 56.24 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b4.pth) |
+| **DeFM EfficientNet-B2** | 4.95 | 46.12 | 28.37 | 72.89 | 51.64 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b2.pth) |
+| **DeFM EfficientNet-B0** | 3.01 | 29.39 | 21.04 | 69.54 | 47.17 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b0.pth) |
+| **DeFM RegNetY-1.6GF** | 12.4 | 44.25 | 41.82 | 77.96 | 58.88 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_1_6gf.pth) |
+| **DeFM RegNetY-800MF** | 6.3 | 25.21 | 24.16 | 76.43 | 58.62 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_800mf.pth) |
+| **DeFM RegNetY-400MF** | 4.1 | 17.27 | 25.17 | 74.43 | 51.80 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_400mf.pth) |
 ---
 
 <a id="benchmarks"></a>
