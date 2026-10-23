@@ -341,8 +341,9 @@ class TheiaEncoder(nn.Module):
         ).shape[-1]
 
     def forward(self, x):
+        # Theia's processor rejects anything outside [0, 1], incl. 1 + 1e-7 from an antialiased resize
         tokens = self.model.forward_feature(
-            x, do_rescale=False
+            x.clamp(0, 1), do_rescale=False
         )  # [B, 196, C] on a 14x14 grid
         b, n, c = tokens.shape
         side = int(math.isqrt(n))
