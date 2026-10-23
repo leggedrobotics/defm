@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![PyTorch 2.4+](https://img.shields.io/badge/PyTorch-2.4+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/get-started/locally/)
 [![uv Managed](https://img.shields.io/badge/uv-managed-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-orange?style=for-the-badge)](https://huggingface.co/leggedrobotics/defm)
@@ -39,16 +39,16 @@ and directly jump to [Quick Start](#quick-start). Loading through TorchHub only 
 ### Using uv (Fastest)
 ```bash
 # Create and activate environment
-uv venv --python 3.10
+uv venv --python 3.11
 source .venv/bin/activate
 
-# Install dependencies and DeFM in editable mode
-uv pip install -e .
+# Install dependencies and DeFM in editable mode (with the notebook dependencies)
+uv pip install -e ".[notebooks]"
 ```
 
 ### Using standard pip
 ```bash
-pip install -e .
+pip install -e ".[notebooks]"
 ```
 
 ---
