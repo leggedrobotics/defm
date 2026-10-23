@@ -5,10 +5,10 @@
 
 """ImageNet-1k-Depth: Depth Anything V2 disparity of ImageNet-1k images (Tab. II and III of the DeFM paper).
 
-Disparity -> encoder input follows DeFM pretraining, where monocular-depth data was stored as 8-bit images:
-  1. per-image min-max to 8 bits                      (as in the pretraining shards; an 8-bit image for RGB models)
-  2. "defm":      pseudo-metric depth 10 * exp(-5 x) and the DeFM 3-channel encoding (float)
-     otherwise:   the 8-bit disparity in [0, 1], stacked to 3 channels (near = bright)
+Disparity -> encoder input follows the monocular-depth path of DeFM pretraining (defm.utils.preprocess_depth_dav2):
+  1. per-image min-max to [0, 1], in float
+  2. "defm":      pseudo-metric depth 10 * exp(-5 x) and the DeFM 3-channel encoding
+     otherwise:   the normalized disparity, stacked to 3 channels (near = bright)
   3. Resize(256) on the float tensor, then CenterCrop(224) (RandomCrop(224) + flip for linear-probe training)
   4. encoder mean/std
 """
@@ -54,8 +54,6 @@ def three_channel_from_disparity(disp01: np.ndarray) -> np.ndarray:
 
 
 def encode_disparity(disp: np.ndarray, input_norm: str) -> torch.Tensor:
-    # Min-max normalized in float, as defm.utils.preprocess_depth_dav2 does. The paper quantized to 8 bit here
-    # (as in the pretraining shards), which costs DeFM-S ~0.5 kNN top-1.
     disp = disp.astype(np.float64)
     disp01 = (disp - disp.min()) / (disp.max() - disp.min() + 1e-8)
     x = (

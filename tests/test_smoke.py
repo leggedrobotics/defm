@@ -183,7 +183,7 @@ def test_unhosted_dataset_needs_data_root():
 
 
 def test_metrics_count_beyond_float32():
-    """The confusion matrix must not saturate at 2**24 pixels per cell (the bug fixed in the v2 results)."""
+    """Confusion-matrix counts must stay exact beyond 2**24 pixels per cell (where float32 stops counting)."""
     from benchmarks.segmentation.linear_probe import segmentation_metrics
 
     conf = torch.tensor([[2**25 + 1, 2**24], [0, 2**24]], dtype=torch.long)

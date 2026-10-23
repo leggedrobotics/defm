@@ -153,8 +153,9 @@ def run_linear(
         "validation", encoder.input_norm, train_transform=False, data_root=data_root
     )
 
-    with torch.no_grad(), torch.autocast(
-        "cuda", dtype=dtype, enabled=dtype != torch.float32
+    with (
+        torch.no_grad(),
+        torch.autocast("cuda", dtype=dtype, enabled=dtype != torch.float32),
     ):
         probe = encoder.last_blocks(
             torch.zeros(2, 3, 224, 224, device="cuda"), max(n_options)
@@ -178,8 +179,9 @@ def run_linear(
         train.set_epoch(epoch)
         for x, y in _loader(train, batch_size, workers):
             x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
-            with torch.no_grad(), torch.autocast(
-                "cuda", dtype=dtype, enabled=dtype != torch.float32
+            with (
+                torch.no_grad(),
+                torch.autocast("cuda", dtype=dtype, enabled=dtype != torch.float32),
             ):
                 blocks = encoder.last_blocks(x, max_n)
             loss = sum(F.cross_entropy(o, y) for o in heads(blocks))
