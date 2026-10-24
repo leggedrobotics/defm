@@ -66,7 +66,7 @@ Load via **TorchHub** for easy integration:
 ```python
 import torch
 
-# Load the 307M Parameter Foundation Model
+# Load the 304M-parameter foundation model
 model = torch.hub.load('leggedrobotics/defm:main', 'defm_vit_l14', pretrained=True)
 model.eval().to("cuda")
 ```
@@ -132,10 +132,10 @@ The following table provides a comprehensive overview of the DeFM model family, 
 
 | Model | Params (M) | RTX 4090 BS-128 (ms) | Jetson Orin (ms) | Top-5 KNN (%) | Linear Prob (%) | Checkpoint |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **DeFM ViT-L/14** | 307.0 | 624.91 | 72.82 | 85.42 | 72.76 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_l14.pth) |
-| **DeFM ViT-S/14** | 22.1 | 63.76 | 11.92 | 79.37 | 62.74 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_s14.pth) |
+| **DeFM ViT-L/14** | 303.7 | 624.91 | 72.82 | 85.42 | 72.76 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_l14.pth) |
+| **DeFM ViT-S/14** | 21.6 | 63.76 | 11.92 | 79.37 | 62.74 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_s14.pth) |
 | **DeFM ResNet-50** | 26.2 | 69.39 | 17.79 | 78.93 | 62.56 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet50.pth) |
-| **DeFM ResNet-34** | 21.8 | 33.08 | 13.54 | 73.84 | 54.78 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet34.pth) |
+| **DeFM ResNet-34** | 23.3 | 33.08 | 13.54 | 73.84 | 54.78 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet34.pth) |
 | **DeFM ResNet-18** | 11.7 | 21.06 | 8.67 | 70.93 | 51.57 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet18.pth) |
 | **DeFM EfficientNet-B6** | 28.98 | 150.98 | 54.11 | 79.30 | 60.70 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b6.pth) |
 | **DeFM EfficientNet-B4** | 14.16 | 86.51 | 39.67 | 76.45 | 56.24 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b4.pth) |

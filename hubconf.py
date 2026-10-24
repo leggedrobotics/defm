@@ -15,7 +15,7 @@ def defm_vit_s14(pretrained=True, **kwargs):
 
 
 def defm_vit_l14(pretrained=True, **kwargs):
-    """DeFM ViT-L/14 (307M)"""
+    """DeFM ViT-L/14 (304M)"""
     return create_defm_model("defm_vit_l14", pretrained=pretrained, **kwargs)
 
 

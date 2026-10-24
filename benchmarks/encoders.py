@@ -124,7 +124,8 @@ def build_encoder(name: str) -> nn.Module:
     encoder = builders[spec.family]()
     encoder.name, encoder.input_norm = name, spec.input_norm
     encoder.is_cnn = spec.family == "defm_cnn"
-    # DINOv3 features degrade in float16 (kNN accuracy collapses); run it in bfloat16
+    # DINOv3 global features degrade in float16 (kNN accuracy collapses), so classification runs it in bfloat16.
+    # Segmentation runs every encoder in float16, as in the paper.
     encoder.autocast_dtype = (
         torch.bfloat16 if spec.family == "dinov3" else torch.float16
     )
