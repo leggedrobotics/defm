@@ -172,9 +172,11 @@ def run_linear(
 
     heads = LinearHeads(dims, 1000, lrs, batch_size).cuda()
     optimizer = torch.optim.SGD(heads.param_groups(), momentum=0.9, weight_decay=0.0)
+    # Each loader worker ends its share of an epoch with a partial batch, so an epoch can run up to `workers` more
+    # steps than this; the cosine stays at 0 for those instead of rising again.
     steps = epochs * math.ceil(len(train) / batch_size)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=steps, eta_min=0
+    scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optimizer, lambda s: 0.5 * (1 + math.cos(math.pi * min(s, steps) / steps))
     )
     max_n = max(n_options)
 
@@ -201,16 +203,18 @@ def run_linear(
                     flush=True,
                 )
 
-    correct = torch.zeros(len(heads.heads), device="cuda")
+    correct, n = torch.zeros(len(heads.heads), device="cuda"), 0
     with torch.no_grad():
         for x, y in _loader(val, batch_size, workers):
+            n += len(y)
             x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
             with torch.autocast("cuda", dtype=dtype, enabled=dtype != torch.float32):
                 blocks = encoder.last_blocks(x, max_n)
             correct += torch.stack(
                 [(o.argmax(1) == y).sum() for o in heads(blocks)]
             ).float()
-    acc = (100 * correct / len(val)).tolist()
+    assert n == len(val), (n, len(val))
+    acc = (100 * correct / n).tolist()
     results = [
         {"n_blocks": n, "avgpool": avg, "lr": lr, "top1": a}
         for (n, avg, lr), a in zip(heads.configs, acc)

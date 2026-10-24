@@ -45,9 +45,8 @@ def main():
     p.add_argument(
         "--cache-dir",
         default=None,
-        help="feature cache (default: a temporary directory)",
+        help="feature cache, kept and reused by later runs (default: a temporary directory, removed at the end)",
     )
-    p.add_argument("--keep-cache", action="store_true")
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--output", default="results/segmentation")
     args = p.parse_args()
@@ -64,60 +63,62 @@ def main():
         flush=True,
     )
 
-    t0 = time.time()
-    caches, num_classes = {}, None
-    for split in ("train", bench.test_split):
-        ds = SegmentationDataset(
-            args.dataset, split, encoder.input_norm, args.data_root
+    try:
+        t0 = time.time()
+        caches, num_classes = {}, None
+        for split in ("train", bench.test_split):
+            ds = SegmentationDataset(
+                args.dataset, split, encoder.input_norm, args.data_root
+            )
+            num_classes = ds.num_classes
+            caches[split] = cache_features(
+                encoder, ds, cache_root / split, workers=args.workers
+            )
+        # keep only the feature geometry; free the encoder before probe training
+        geometry = SimpleNamespace(
+            patch_size=encoder.patch_size,
+            pad_multiple=encoder.pad_multiple,
+            embed_dim=caches["train"][0].shape[-1],
         )
-        num_classes = ds.num_classes
-        caches[split] = cache_features(
-            encoder, ds, cache_root / split, workers=args.workers
+        del encoder
+        torch.cuda.empty_cache()
+
+        runs = {}
+        for lr in args.lrs:
+            print(f"  training linear probe, lr={lr:g}", flush=True)
+            runs[f"{lr:g}"] = train_and_evaluate(
+                caches["train"],
+                caches[bench.test_split],
+                geometry,
+                num_classes,
+                bench.size,
+                lr=lr,
+                epochs=bench.epochs,
+                warmup_epochs=bench.warmup_epochs,
+                workers=args.workers,
+            )
+            print(f"  lr={lr:g}: mIoU {runs[f'{lr:g}']['miou']:.2f}", flush=True)
+
+        best_lr = max(runs, key=lambda k: runs[k]["miou"])
+        result = {
+            "encoder": args.encoder,
+            "dataset": args.dataset,
+            "best_lr": float(best_lr),
+            "miou": runs[best_lr]["miou"],
+            "runs": runs,
+            "minutes": (time.time() - t0) / 60,
+        }
+        out = Path(args.output) / f"{args.dataset}__{args.encoder}.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(result, indent=2))
+        print(
+            f"[{args.encoder} | {args.dataset}] mIoU {result['miou']:.2f} (lr {best_lr}) -> {out}",
+            flush=True,
         )
-    # keep only the feature geometry; free the encoder before probe training
-    geometry = SimpleNamespace(
-        patch_size=encoder.patch_size,
-        pad_multiple=encoder.pad_multiple,
-        embed_dim=caches["train"][0].shape[-1],
-    )
-    del encoder
-    torch.cuda.empty_cache()
 
-    runs = {}
-    for lr in args.lrs:
-        print(f"  training linear probe, lr={lr:g}", flush=True)
-        runs[f"{lr:g}"] = train_and_evaluate(
-            caches["train"],
-            caches[bench.test_split],
-            geometry,
-            num_classes,
-            bench.size,
-            lr=lr,
-            epochs=bench.epochs,
-            warmup_epochs=bench.warmup_epochs,
-            workers=args.workers,
-        )
-        print(f"  lr={lr:g}: mIoU {runs[f'{lr:g}']['miou']:.2f}", flush=True)
-
-    best_lr = max(runs, key=lambda k: runs[k]["miou"])
-    result = {
-        "encoder": args.encoder,
-        "dataset": args.dataset,
-        "best_lr": float(best_lr),
-        "miou": runs[best_lr]["miou"],
-        "runs": runs,
-        "minutes": (time.time() - t0) / 60,
-    }
-    out = Path(args.output) / f"{args.dataset}__{args.encoder}.json"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(result, indent=2))
-    print(
-        f"[{args.encoder} | {args.dataset}] mIoU {result['miou']:.2f} (lr {best_lr}) -> {out}",
-        flush=True,
-    )
-
-    if not args.keep_cache and args.cache_dir is None:
-        shutil.rmtree(cache_root.parents[1], ignore_errors=True)
+    finally:
+        if args.cache_dir is None:
+            shutil.rmtree(cache_root.parents[1], ignore_errors=True)
 
 
 if __name__ == "__main__":

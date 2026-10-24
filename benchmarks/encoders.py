@@ -9,8 +9,9 @@ Every encoder exposes the same interface:
     enc.input_norm    -> "defm" | "imagenet" | "unit"  (which depth encoding / normalization it expects)
     enc.patch_size    -> stride of the dense feature map
     enc.pad_multiple  -> inputs are center-padded to a multiple of this
-    enc.embed_dim     -> channel dimension of global and dense features
-    enc(x)            -> (global [B, C], dense [B, h*w, C]) for an input already padded to pad_multiple
+    enc.embed_dim     -> channel dimension C of the dense features
+    enc(x)            -> (global [B, C_g], dense [B, h*w, C]) for an input already padded to pad_multiple
+                         (C_g can be larger than C: DeFM CNNs 512 vs 128, C-RADIOv3 3072 vs 1024)
     enc.last_blocks(x, n) -> [(global, dense)] for the last n blocks (linear-probe classification)
 
 DINOv2 and Depth Anything V2 weights are loaded into DeFM's own ViT (the original DINOv2 implementation),
@@ -245,7 +246,6 @@ class CNNEncoder(nn.Module):
         self.model = model
         self.patch_size, self.pad_multiple = 16, 32
         self.embed_dim = model.norm_patch.normalized_shape[0]  # dense (P4) channels
-        self.global_dim = model.norm_cls.normalized_shape[0]
 
     def forward(self, x):
         out = self.model(x)

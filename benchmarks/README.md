@@ -40,10 +40,11 @@ their own normalization.
 
 ## Datasets
 
-Every dataset uses the same format (`meta.json` + `data/<split>-*.parquet` with 16-bit depth and 8-bit label PNGs,
-see `benchmarks/segmentation/datasets.py`). Datasets whose license allows it are downloaded from the Hub
-automatically; the others are built from their official release with a script in `scripts/datasets/`, which
-reproduces the data used for the results below exactly.
+Every dataset uses the same format: `meta.json` + `data/<split>-*.parquet`, with 16-bit depth and 8-bit label PNGs for
+the segmentation datasets (see `benchmarks/segmentation/datasets.py`) and 16-bit disparity PNGs with integer labels for
+ImageNet-1k-Depth. Datasets whose license allows it are downloaded from the Hub automatically; the others are built
+from their official release with a script in `scripts/datasets/`, which reproduces the data used for the results below
+exactly.
 
 | Dataset | Classes | Train / test | How to get it |
 |---|---|---|---|
@@ -133,10 +134,10 @@ k = 10/20/100/200).
 **Segmentation.** Inputs are brought to a fixed size per dataset (ScanNet 480x640, SUN RGB-D 530x730 by center
 pad/crop, OFFSED 360x640, TartanGround 640x640, GraspNet 360x640). Last-layer patch tokens are extracted once
 (no augmentation); a linear layer maps each token to class logits, which are bilinearly upsampled. Training:
-pixel-wise cross-entropy (ignore 255), AdamW (weight decay 1e-4), one-cycle schedule with linear warm-up and cosine
-decay, batch 32, FP16, gradient clipping 1.0; 25 epochs with 3 warm-up epochs (OFFSED: 200 / 20). The probe is
-trained with peak LR 1e-3 and 5e-3, evaluated after the last epoch, and the better mIoU is reported. mIoU is computed
-from a confusion matrix accumulated over the whole test set.
+pixel-wise cross-entropy (ignore 255), AdamW (weight decay 1e-4), PyTorch's `OneCycleLR` with its defaults (cosine
+warm-up from 1/25 of the peak LR, cosine decay), batch 32, FP16, gradient clipping 1.0; 25 epochs with 3 warm-up
+epochs (OFFSED: 200 / 20). The probe is trained with peak LR 1e-3 and 5e-3, evaluated after the last epoch, and the
+better mIoU is reported. mIoU is computed from a confusion matrix accumulated over the whole test set.
 
 **Classification.** Center-cropped 224x224 inputs. kNN: cosine similarity on L2-normalized global features,
 temperature 0.07, k = 20 reported (DINOv2 protocol). Linear: linear heads on the class token (+ average-pooled patch

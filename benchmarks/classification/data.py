@@ -25,6 +25,7 @@ import torchvision.transforms.v2 as T
 from torch.utils.data import IterableDataset, get_worker_info
 
 from benchmarks.preprocess import normalize
+from defm.utils.utils import convert_to_3channel_metric
 
 HF_REPO = "leggedrobotics/defm-bench-imagenet-depth"
 
@@ -42,22 +43,13 @@ def resolve_root(data_root: Optional[str]) -> Path:
     )
 
 
-def three_channel_from_disparity(disp01: np.ndarray) -> np.ndarray:
-    """DeFM encoding of min-max normalized relative disparity (pretraining MDE path, defm.utils.preprocess_depth_dav2)."""
-    metric = 10.0 * np.exp(-5.0 * disp01)
-    log_depth = np.log1p(metric)
-    c1 = log_depth / np.log1p(100.0)
-    c2 = np.clip(log_depth / np.log1p(9.0), 0, 1)
-    lo, hi = np.log1p(metric.min()), np.log1p(metric.max())
-    c3 = (log_depth - lo) / (hi - lo) if hi > lo else np.zeros_like(log_depth)
-    return np.stack([c1, c2, c3], axis=-1)
-
-
 def encode_disparity(disp: np.ndarray, input_norm: str) -> torch.Tensor:
     disp = disp.astype(np.float64)
     disp01 = (disp - disp.min()) / (disp.max() - disp.min() + 1e-8)
     x = (
-        three_channel_from_disparity(disp01)
+        convert_to_3channel_metric(
+            10.0 * np.exp(-5.0 * disp01)
+        )  # pseudo-metric depth of preprocess_depth_dav2
         if input_norm == "defm"
         else np.repeat(disp01[..., None], 3, axis=-1)
     )

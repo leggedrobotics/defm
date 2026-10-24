@@ -120,7 +120,7 @@ def test_disparity_is_not_quantized():
 
     disp = np.arange(0, 60000, 3, dtype=np.uint16).reshape(100, 200)
     x = encode_disparity(disp, "unit")
-    assert len(torch.unique(x[0])) > 256  # float16 path: no 8-bit quantization
+    assert len(torch.unique(x[0])) > 256  # float path: no 8-bit quantization
 
 
 # ---------------------------------------------------------------------------------------------- data format
@@ -170,6 +170,70 @@ def test_segmentation_dataset(tmp_path, name, size):
         and y.dtype == torch.int64
     )
     assert set(torch.unique(y).tolist()) <= set(range(5)) | {255}
+
+
+def _write_toy_imagenet_depth(root: Path, n_files=3, rows_per_file=10):
+    import cv2
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    from build_imagenet_depth import SCHEMA
+
+    (root / "data").mkdir(parents=True)
+    rng, label = np.random.default_rng(0), 0
+    for f in range(n_files):
+        rows = []
+        for _ in range(rows_per_file):
+            disp = rng.integers(0, 60000, (40, 50), dtype=np.uint16)
+            png = cv2.imencode(".png", disp)[1].tobytes()
+            rows.append(
+                {
+                    "id": str(label),
+                    "label": label,
+                    "depth": {"bytes": png, "path": None},
+                }
+            )
+            label += 1
+        pq.write_table(
+            pa.Table.from_pylist(rows, schema=SCHEMA),
+            root / "data" / f"train-{f:05d}-of-{n_files:05d}.parquet",
+            row_group_size=4,
+        )
+    (root / "meta.json").write_text(json.dumps({"splits": {"train": label}}))
+    return label
+
+
+@pytest.mark.parametrize("workers, shuffle", [(0, False), (3, True)])
+def test_imagenet_depth_yields_every_sample_once(tmp_path, workers, shuffle):
+    from benchmarks.classification.data import ImageNetDepth
+
+    n = _write_toy_imagenet_depth(tmp_path / "imagenet_depth")
+    ds = ImageNetDepth(
+        "train", "defm", train_transform=False, data_root=str(tmp_path), shuffle=shuffle
+    )
+    loader = torch.utils.data.DataLoader(ds, batch_size=4, num_workers=workers)
+    epochs = []
+    for epoch in range(2):
+        ds.set_epoch(epoch)
+        labels = [y for _, ys in loader for y in ys.tolist()]
+        assert sorted(labels) == list(range(n)) and n == len(ds)
+        epochs.append(labels)
+    assert (epochs[0] != epochs[1]) == shuffle
+
+
+def test_cached_features_pickle_without_data(tmp_path):
+    """Loader workers must reopen the feature memmap, not receive a pickled copy of it."""
+    import pickle
+
+    from benchmarks.segmentation.linear_probe import _Cached
+
+    feats = np.random.default_rng(0).random((64, 100, 32), dtype=np.float32)
+    np.save(tmp_path / "f.npy", feats)
+    np.save(tmp_path / "l.npy", np.zeros((64, 8, 8), np.uint8))
+    ds = _Cached(*(np.load(tmp_path / f, mmap_mode="r") for f in ("f.npy", "l.npy")))
+    blob = pickle.dumps(ds)
+    assert len(blob) < 10_000  # the features alone are 800 kB
+    copy = pickle.loads(blob)
+    assert torch.equal(copy[5][0], ds[5][0]) and torch.equal(copy[5][1], ds[5][1])
 
 
 def test_unhosted_dataset_needs_data_root():
@@ -235,7 +299,37 @@ def test_knn_separable():
     train_f = torch.nn.functional.normalize(centers[train_y] + noise(120), dim=1)
     val_f = torch.nn.functional.normalize(centers[val_y] + noise(30), dim=1)
     acc = knn_classify(train_f, train_y, val_f, val_y, ks=(10, 20), num_classes=6)
-    assert acc["k20"]["top1"] == 100.0
+    assert acc["k20"]["top1"] == 100.0 and acc["k20"]["top5"] == 100.0
+
+
+def test_linear_heads():
+    from benchmarks.classification.evaluate import LinearHeads, _linear_input
+
+    blocks = [(torch.randn(2, 8), torch.randn(2, 5, 6)) for _ in range(4)]
+    dims = {
+        (n, avg): _linear_input(blocks, n, avg).shape[-1]
+        for n in (1, 4)
+        for avg in (False, True)
+    }
+    assert dims == {(1, False): 8, (1, True): 14, (4, False): 32, (4, True): 38}
+    heads = LinearHeads(dims, 10, [1e-3, 1e-2], batch_size=512)
+    assert len(heads.heads) == 8
+    assert [g["lr"] for g in heads.param_groups()][:2] == [2e-3, 2e-2]
+    assert all(o.shape == (2, 10) for o in heads(blocks))
+
+
+@pytest.mark.parametrize("size, pad", [((530, 730), 14), ((361, 641), 32)])
+def test_seg_head_crops_where_center_pad_padded(size, pad):
+    """The logits are cropped back at the same offsets center_pad used, also for odd padding."""
+    from benchmarks.encoders import center_pad
+    from benchmarks.segmentation.linear_probe import LinearSegHead
+
+    _, (top, left) = center_pad(torch.zeros(1, 3, *size), pad)
+    head = LinearSegHead(4, 3, size, pad, pad)
+    assert ((head.padded[0] - size[0]) // 2, (head.padded[1] - size[1]) // 2) == (
+        top,
+        left,
+    )
 
 
 # ---------------------------------------------------------------------------------------------- encoders (network)

@@ -5,11 +5,11 @@
 
 """Linear-probe semantic segmentation on frozen dense features.
 
-Protocol (DeFM paper, Sec. V-C / rebuttal):
+Protocol (DeFM paper, Sec. V-C):
   - frozen encoder, last-layer patch tokens, extracted once and cached (no augmentation)
   - one linear layer per token, logits bilinearly upsampled to the input resolution
-  - pixel-wise cross-entropy (ignore 255), AdamW (wd 1e-4), one-cycle LR (linear warm-up, cosine decay),
-    batch 32, FP16, grad-norm clip 1.0; peak LR from {1e-3, 5e-3}
+  - pixel-wise cross-entropy (ignore 255), AdamW (wd 1e-4), PyTorch OneCycleLR with its defaults (cosine warm-up
+    from peak/25, cosine decay, beta1 cycled 0.95 -> 0.85), batch 32, FP16, grad-norm clip 1.0; peak LR from {1e-3, 5e-3}
   - evaluated once, after the final epoch, on the test split
 """
 
@@ -77,6 +77,14 @@ def cache_features(
 class _Cached(Dataset):
     def __init__(self, feats, labels):
         self.feats, self.labels = feats, labels
+
+    # Loader workers reopen the memory maps: pickling a memmap copies its data, which under the spawn/forkserver
+    # start methods (forkserver is the Linux default from Python 3.14) would copy the whole cache to every worker.
+    def __getstate__(self):
+        return {"paths": (self.feats.filename, self.labels.filename)}
+
+    def __setstate__(self, state):
+        self.feats, self.labels = (np.load(p, mmap_mode="r") for p in state["paths"])
 
     def __len__(self):
         return len(self.feats)

@@ -63,9 +63,12 @@ def resolve_root(name: str, data_root: Optional[str]) -> Path:
     if data_root is not None:
         root = Path(data_root) / name
         if not (root / "meta.json").exists():
-            raise FileNotFoundError(
-                f"{root}/meta.json not found. Build it with scripts/datasets/convert_{name}.py"
+            hint = (
+                f"omit --data-root to download it from {BENCHMARKS[name].hf_repo}"
+                if BENCHMARKS[name].hf_repo
+                else f"build it with scripts/datasets/convert_{name}.py"
             )
+            raise FileNotFoundError(f"{root}/meta.json not found; {hint}")
         return root
     repo = BENCHMARKS[name].hf_repo
     if repo is None:
