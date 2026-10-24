@@ -114,8 +114,8 @@ def preprocess_depth_image(
     else:
         img_np = input_data.astype(np.float32)
 
-    if img_np.ndim == 3:
-        img_np = img_np[:, :, 0]
+    if img_np.ndim == 3:  # (1, H, W) or (H, W, C)
+        img_np = img_np[0] if img_np.shape[0] == 1 else img_np[:, :, 0]
 
     # Calculate and apply resizing
     final_h, final_w = get_target_size(img_np.shape[-2:], target_size, patch_size)
@@ -147,8 +147,8 @@ def preprocess_depth_dav2(
     else:
         img_np = input_data.astype(np.float32)
 
-    if img_np.ndim == 3:
-        img_np = img_np[:, :, 0]
+    if img_np.ndim == 3:  # (1, H, W) or (H, W, C)
+        img_np = img_np[0] if img_np.shape[0] == 1 else img_np[:, :, 0]
 
     # --- DAV2 Specific: Inverse Depth to Pseudo-Metric ---
     # Normalize to [0, 1]

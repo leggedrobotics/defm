@@ -3,12 +3,7 @@
 # This source code is licensed under the Apache License, Version 2.0
 # found in the LICENSE file in the root directory of this source tree.
 
-# Expose package version: prefer installed metadata, fall back to a default.
-try:
-    from importlib.metadata import version, PackageNotFoundError
-except Exception:
-    # Python <3.8 fallback (unlikely here)
-    from importlib_metadata import version, PackageNotFoundError  # type: ignore
+from importlib.metadata import PackageNotFoundError, version
 
 try:
     __version__ = version("defm")

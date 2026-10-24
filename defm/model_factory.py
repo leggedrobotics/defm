@@ -43,9 +43,13 @@ def get_hub_config(model_name: str):
 
 def create_defm_model(model_name, pretrained=False, pretrained_path=None):
     """
-    Builds the DeFM model and loads weights.
-    Supports ViT-L/14 (307M) and ViT-S/14 (22M) variants
+    Builds a DeFM model (any variant in defm/configs, e.g. defm_vit_l14, defm_resnet50) and loads its weights:
+    from pretrained_path if given, otherwise from the Hugging Face Hub. The CNN backbones are built without
+    torchvision's ImageNet weights, so pretrained=False gives a randomly initialized model.
     """
+    if not (BASE_PATH / "configs" / f"{model_name}.yaml").exists():
+        available = sorted(p.stem for p in (BASE_PATH / "configs").glob("*.yaml"))
+        raise ValueError(f"Unknown DeFM model {model_name!r}; available: {available}")
     downloading = pretrained and not pretrained_path
     cfg = get_hub_config(model_name) if downloading else get_defm_config(model_name)
 
@@ -69,11 +73,17 @@ def create_defm_model(model_name, pretrained=False, pretrained_path=None):
         model = vits.__dict__[cfg.arch](**vit_kwargs)
 
     elif "resnet" in cfg.arch:
-        model = ResNetBiFPN(backbone_name=cfg.arch, out_channels=cfg.out_channels)
+        model = ResNetBiFPN(
+            backbone_name=cfg.arch, out_channels=cfg.out_channels, pretrained=False
+        )
     elif "regnet" in cfg.arch:
-        model = RegNetBiFPN(backbone_name=cfg.arch, out_channels=cfg.out_channels)
+        model = RegNetBiFPN(
+            backbone_name=cfg.arch, out_channels=cfg.out_channels, pretrained=False
+        )
     elif "efficientnet" in cfg.arch:
-        model = EfficientNetBiFPN(backbone_name=cfg.arch, out_channels=cfg.out_channels)
+        model = EfficientNetBiFPN(
+            backbone_name=cfg.arch, out_channels=cfg.out_channels, pretrained=False
+        )
     else:
         raise ValueError(f"Unsupported architecture: {cfg.arch}")
 

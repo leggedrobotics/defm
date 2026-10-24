@@ -34,7 +34,11 @@ To use DeFM as a backbone in your own projects, install the package from PyPI:
 ```bash
 pip install defm
 ```
-and directly jump to [Quick Start](#quick-start). Loading through TorchHub only needs `torch torchvision numpy huggingface_hub omegaconf`. Otherwise, below you can find instructions to install the DeFM module for using the notebooks or for local development.
+and directly jump to [Quick Start](https://github.com/leggedrobotics/defm#quick-start). Loading through TorchHub only needs `torch torchvision numpy huggingface_hub omegaconf`. Otherwise, below you can find instructions to install the DeFM module for using the notebooks or for local development.
+
+```bash
+git clone https://github.com/leggedrobotics/defm && cd defm
+```
 
 ### Using uv (Fastest)
 ```bash
@@ -67,14 +71,22 @@ model = torch.hub.load('leggedrobotics/defm:main', 'defm_vit_l14', pretrained=Tr
 model.eval().to("cuda")
 ```
 
+or, with the `defm` package installed:
+
+```python
+from defm.model_factory import create_defm_model
+
+model = create_defm_model("defm_vit_l14", pretrained=True)  # weights from the Hugging Face Hub
+```
+
 ### 2. Preprocessing
 DeFM requires depth maps to be processed into our metric-aware 3-channel format.
 
 ```python
 from defm import preprocess_depth_image
 
-# Depth needs to be in meters (numpy array, tensor or PIL image)
-normalized_depth = preprocess_depth_image(metric_depth, target_size=518, patch_size=14)
+# Depth in meters: (H, W) numpy array, tensor or PIL image. target_size is an int (square) or (H, W).
+normalized_depth = preprocess_depth_image(metric_depth, target_size=518, patch_size=14).to("cuda")
 ```
 
 ### 3. Inference
@@ -87,12 +99,28 @@ spatial_tokens = output[0][0] # (B, C, H', W')
 class_token = output[0][1] # (B, C)
 ```
 
+The CNN models (`defm_resnet50`, `defm_efficientnet_b0`, ...) return a dict instead, and their input height and width
+must be multiples of 32:
+
+```python
+model = torch.hub.load('leggedrobotics/defm:main', 'defm_resnet50', pretrained=True).eval().to("cuda")
+normalized_depth = preprocess_depth_image(metric_depth, target_size=(224, 320)).to("cuda")
+
+with torch.no_grad():
+    output = model(normalized_depth)
+
+class_token = output["global_backbone"]  # (B, C)
+spatial_tokens = output["dense_bifpn"]["P4"]  # (B, C, H/16, W/16), the features distilled from the ViT
+```
+
+See `scripts/notebooks/` for more examples.
+
 ---
 
 ## 📂 Project Structure
 * `defm/`: Main package containing model factory, architectures, and utils.
 * `scripts/notebooks/`: Demo notebooks for **Semantic PCA Visualization** and **Inference Scripts** for CNNs and ViTs.
-* `benchmarks/`: Classification and segmentation benchmarks for DeFM and the baselines (see [Benchmarks](#benchmarks)).
+* `benchmarks/`: Classification and segmentation benchmarks for DeFM and the baselines (see [Benchmarks](https://github.com/leggedrobotics/defm#benchmarks)).
 * `scripts/datasets/`: Scripts to build the benchmark datasets from their official releases.
 * `tests/`: Smoke tests (`pytest tests`).
 
@@ -121,7 +149,7 @@ The following table provides a comprehensive overview of the DeFM model family, 
 <a id="benchmarks"></a>
 ## 📏 Benchmarks
 
-[`benchmarks/`](benchmarks/README.md) reproduces the linear-probe evaluations of the paper for DeFM and all image
+[`benchmarks/`](https://github.com/leggedrobotics/defm/blob/main/benchmarks/README.md) reproduces the linear-probe evaluations of the paper for DeFM and all image
 baselines (DINOv2, DINOv3, Depth Anything V2, C-RADIOv3, Theia), loading every model from its official
 Hugging Face weights:
 
@@ -133,7 +161,7 @@ python -m benchmarks.classification --encoder defm_vit_s14 --eval knn linear    
 
 TartanGround, GraspNet-1Billion and ImageNet-1k-Depth are downloaded from the Hub; ScanNet, SUN RGB-D and OFFSED
 are built from their official releases with the scripts in `scripts/datasets/`. See the
-[benchmark README](benchmarks/README.md) for datasets, protocol and results.
+[benchmark README](https://github.com/leggedrobotics/defm/blob/main/benchmarks/README.md) for datasets, protocol and results.
 
 ---
 

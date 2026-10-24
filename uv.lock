@@ -667,7 +667,6 @@ dependencies = [
     { name = "huggingface-hub" },
     { name = "numpy" },
     { name = "omegaconf" },
-    { name = "opencv-python" },
     { name = "pillow" },
     { name = "torch" },
     { name = "torchvision" },
@@ -677,6 +676,7 @@ dependencies = [
 benchmarks = [
     { name = "einops" },
     { name = "h5py" },
+    { name = "opencv-python" },
     { name = "pyarrow" },
     { name = "safetensors" },
     { name = "scipy" },
@@ -687,6 +687,7 @@ notebooks = [
     { name = "ipykernel" },
     { name = "jupyter" },
     { name = "matplotlib" },
+    { name = "opencv-python" },
     { name = "scikit-learn" },
 ]
 test = [
@@ -703,7 +704,8 @@ requires-dist = [
     { name = "matplotlib", marker = "extra == 'notebooks'", specifier = ">=3.7.5" },
     { name = "numpy", specifier = "<2.0.0" },
     { name = "omegaconf", specifier = ">=2.3.0" },
-    { name = "opencv-python", specifier = ">=4.11.0.86" },
+    { name = "opencv-python", marker = "extra == 'benchmarks'", specifier = ">=4.11.0.86" },
+    { name = "opencv-python", marker = "extra == 'notebooks'", specifier = ">=4.11.0.86" },
     { name = "pillow", specifier = ">=10.4.0" },
     { name = "pyarrow", marker = "extra == 'benchmarks'", specifier = "<26" },
     { name = "pytest", marker = "extra == 'test'" },
