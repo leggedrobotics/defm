@@ -176,7 +176,7 @@ def _write_toy_imagenet_depth(root: Path, n_files=3, rows_per_file=10):
     import cv2
     import pyarrow as pa
     import pyarrow.parquet as pq
-    from build_imagenet_depth import SCHEMA
+    from build_imagenet_depth import make_schema
 
     (root / "data").mkdir(parents=True)
     rng, label = np.random.default_rng(0), 0
@@ -194,7 +194,7 @@ def _write_toy_imagenet_depth(root: Path, n_files=3, rows_per_file=10):
             )
             label += 1
         pq.write_table(
-            pa.Table.from_pylist(rows, schema=SCHEMA),
+            pa.Table.from_pylist(rows, schema=make_schema(map(str, range(label)))),
             root / "data" / f"train-{f:05d}-of-{n_files:05d}.parquet",
             row_group_size=4,
         )

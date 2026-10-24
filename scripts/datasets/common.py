@@ -82,6 +82,19 @@ SCHEMA = pa.schema(
 )
 
 
+def imread(path, flags=cv2.IMREAD_UNCHANGED) -> np.ndarray:
+    image = cv2.imread(str(path), flags)
+    if image is None:
+        raise FileNotFoundError(f"could not read {path}")
+    return image
+
+
+def remove_shards(data_dir: Path, split: str) -> None:
+    """Remove the shards of an earlier run: readers load every <split>-*.parquet."""
+    for path in Path(data_dir).glob(f"{split}-*.parquet*"):
+        path.unlink()
+
+
 def encode_depth(depth_m: np.ndarray, depth_scale: float) -> bytes:
     """Metric depth (m) -> 16-bit PNG with value = round(depth * depth_scale); invalid / NaN -> 0."""
     d = np.nan_to_num(depth_m.astype(np.float64), nan=0.0, posinf=0.0, neginf=0.0)
@@ -107,6 +120,7 @@ def write_split(
     """samples: (id, depth_png, label_png). Writes <out_root>/data/<split>-XXXXX-of-XXXXX.parquet."""
     data_dir = Path(out_root) / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
+    remove_shards(data_dir, split)
     shards, rows, size, n = [], [], 0, 0
 
     def flush():
@@ -121,7 +135,9 @@ def write_split(
                 },
                 schema=SCHEMA,
             )
-            path = data_dir / f"{split}-{len(shards):05d}.tmp.parquet"
+            path = (
+                data_dir / f"{split}-{len(shards):05d}.parquet.tmp"
+            )  # not matched by the readers' glob
             pq.write_table(table, path, row_group_size=256)
             shards.append(path)
             rows, size = [], 0

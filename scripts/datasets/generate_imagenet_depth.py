@@ -13,7 +13,9 @@ build_imagenet_depth.py on the output to obtain the benchmark's Parquet format.
     python scripts/datasets/generate_imagenet_depth.py --dav2-repo Depth-Anything-V2 \
         --imagenet /data/imagenet --out /data/imagenet_depth_npz [--shard 0 --num-shards 8]
 
-Expected ImageNet layout: <imagenet>/train/<wnid>/<wnid>_<idx>.JPEG and <imagenet>/val/<wnid>/ILSVRC2012_val_<n>.JPEG.
+Expected ImageNet layout: <imagenet>/train/<wnid>/<wnid>_<idx>.JPEG and <imagenet>/val/<wnid>/ILSVRC2012_val_<n>.JPEG
+(the official validation archive unpacks without the <wnid> folders; sort it into them first, e.g. with
+https://github.com/pytorch/examples/blob/main/imagenet/extract_ILSVRC.sh).
 """
 
 import argparse
@@ -27,7 +29,9 @@ from huggingface_hub import hf_hub_download
 
 
 def main():
-    p = argparse.ArgumentParser()
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     p.add_argument(
         "--dav2-repo",
         required=True,
@@ -53,9 +57,12 @@ def main():
 
     out_dirs = {"train": "train_images", "val": "val_images"}
     for split, out_name in out_dirs.items():
-        files = sorted(Path(args.imagenet, split).glob("*/*.JPEG"))[
-            args.shard :: args.num_shards
-        ]
+        files = sorted(Path(args.imagenet, split).glob("*/*.JPEG"))
+        if not files:
+            raise SystemExit(
+                f"no {args.imagenet}/{split}/<wnid>/*.JPEG files (see the expected layout above)"
+            )
+        files = files[args.shard :: args.num_shards]
         out = Path(args.out) / out_name
         out.mkdir(parents=True, exist_ok=True)
         for k, f in enumerate(files):
@@ -64,7 +71,12 @@ def main():
             if target.exists():
                 continue
             disparity = model.infer_image(cv2.imread(str(f)), 518)
-            np.savez_compressed(target, depth=np.uint16(disparity))
+            tmp = target.with_name(
+                target.name + ".tmp"
+            )  # renamed when complete, so a resumed run skips no partial file
+            with open(tmp, "wb") as fh:
+                np.savez_compressed(fh, depth=np.uint16(disparity))
+            tmp.rename(target)
             if k % 1000 == 0:
                 print(f"{split}: {k}/{len(files)}", flush=True)
 

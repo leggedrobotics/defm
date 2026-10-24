@@ -22,7 +22,6 @@ import argparse
 import json
 from pathlib import Path
 
-import cv2
 import numpy as np
 
 from common import (
@@ -30,6 +29,7 @@ from common import (
     NYU40,
     encode_depth,
     encode_label,
+    imread,
     write_meta,
     write_split,
 )
@@ -43,12 +43,8 @@ def samples(frames: Path, split: str):
     for scene in sorted(scenes):
         for color in sorted((frames / scene / "color").glob("*.jpg")):
             frame = color.stem
-            depth = cv2.imread(
-                str(frames / scene / "depth" / f"{frame}.png"), cv2.IMREAD_UNCHANGED
-            )
-            label = cv2.imread(
-                str(frames / scene / "label" / f"{frame}.png"), cv2.IMREAD_UNCHANGED
-            )
+            depth = imread(frames / scene / "depth" / f"{frame}.png")
+            label = imread(frames / scene / "label" / f"{frame}.png")
             assert depth.dtype == np.uint16 and label.dtype == np.uint8, (scene, frame)
             label = label - np.uint8(1)  # NYU40 1..40 -> 0..39, 0 (unannotated) -> 255
             yield (

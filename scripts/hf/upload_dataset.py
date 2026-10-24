@@ -41,8 +41,8 @@ SOURCES = {
         "ImageNet-1k (ILSVRC 2012)",
         "https://www.image-net.org",
         "Relative disparity predicted by Depth Anything V2 (ViT-L, input size 518) for every ImageNet-1k "
-        "train and validation image, stored losslessly as uint16 at the original image resolution "
-        "(larger = closer). Used for kNN and linear-probe classification.",
+        "train and validation image, truncated to uint16 and stored as lossless 16-bit PNG at the original image "
+        "resolution (larger = closer). Used for kNN and linear-probe classification.",
     ),
 }
 
@@ -70,16 +70,36 @@ extra_gated_fields:
 """
 
 
+def features(meta: dict) -> str:
+    """ImageNet-Depth features for the card (class names for the label), as the `datasets` library and the Hub
+    viewer expect them; they take precedence over the schema stored in the Parquet files."""
+    names = "\n".join(
+        f"          '{i}': {json.dumps(n)}" for i, n in enumerate(meta["class_names"])
+    )
+    return f"""dataset_info:
+  features:
+  - name: id
+    dtype: string
+  - name: label
+    dtype:
+      class_label:
+        names:
+{names}
+  - name: depth
+    dtype: image
+"""
+
+
 def card(name: str, meta: dict) -> str:
     source, url, summary = SOURCES[name]
     splits = list(meta["splits"])
     data_files = "\n".join(f"  - split: {s}\n    path: data/{s}-*" for s in splits)
     task = "image-classification" if name == "imagenet_depth" else "image-segmentation"
-    gating = GATING if name == "imagenet_depth" else ""
+    gating = GATING + features(meta) if name == "imagenet_depth" else ""
     if name == "imagenet_depth":
         columns = (
             "| `id` | string | ImageNet file stem |\n"
-            "| `label` | int64 | class index 0..999 (sorted WordNet ids, see `meta.json`) |\n"
+            "| `label` | class label | class index 0..999 (sorted WordNet ids, see `meta.json`) |\n"
             "| `depth` | image | 16-bit PNG, uint16 relative disparity |"
         )
     else:

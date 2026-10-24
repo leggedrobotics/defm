@@ -8,7 +8,7 @@
 Either source gives byte-identical output:
 
   official   SUN RGB-D from https://rgbd.cs.princeton.edu (SUNRGBD.zip, 6.9 GB, and SUNRGBDtoolbox.zip, 0.6 GB);
-             needs h5py and scipy (pip install h5py scipy)
+             needs h5py and scipy (both in the benchmarks extra)
 
     python scripts/datasets/convert_sunrgbd.py --source official --sunrgbd <dir>/SUNRGBD \
         --toolbox <dir>/SUNRGBDtoolbox --out <data_root>/sunrgbd
@@ -26,7 +26,6 @@ import argparse
 import json
 from pathlib import Path
 
-import cv2
 import numpy as np
 
 from common import (
@@ -34,6 +33,7 @@ from common import (
     NYU40,
     encode_depth,
     encode_label,
+    imread,
     write_meta,
     write_split,
 )
@@ -60,8 +60,8 @@ def dformer_samples(root: Path, split: str):
         sid = f"{split}_{i}"
         yield sample(
             sid,
-            cv2.imread(str(root / "Depth" / f"{sid}.png"), cv2.IMREAD_UNCHANGED),
-            cv2.imread(str(root / "labels" / f"{sid}.png"), cv2.IMREAD_UNCHANGED),
+            imread(root / "Depth" / f"{sid}.png"),
+            imread(root / "labels" / f"{sid}.png"),
         )
 
 
@@ -97,9 +97,7 @@ class Official:
             label = np.array(
                 self.seg[labels[self.index[scene], 0]]
             ).T  # MATLAB stores it column-major
-            yield sample(
-                f"{split}_{i}", cv2.imread(str(depth_png), cv2.IMREAD_UNCHANGED), label
-            )
+            yield sample(f"{split}_{i}", imread(depth_png), label)
 
 
 def main():

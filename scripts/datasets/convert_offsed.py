@@ -25,14 +25,21 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from common import IGNORE_INDEX, encode_depth, encode_label, write_meta, write_split
+from common import (
+    IGNORE_INDEX,
+    encode_depth,
+    encode_label,
+    imread,
+    write_meta,
+    write_split,
+)
 
 SIZE = (640, 360)  # (width, height)
 FOCAL_TIMES_BASELINE = np.float32(
     126.0
 )  # px * m, at the 2208x1242 disparity resolution
 CLASSES = ["ground", "structure", "vegetation", "vehicle", "human"]
-# labelmap.txt index -> class (255 = ignore): background and held object are ignored
+# labelmap.txt index -> class (255 = ignore): background (0) and sky (16) are ignored, held object (11) is human
 FINE_TO_COARSE = {
     0: 255,
     1: 1,
@@ -104,9 +111,7 @@ def samples(disparity_dir: Path, devkit: Path, split: str):
             depth_mm(np.load(disparity_dir / f"{frame}.npy")).astype(np.float64)
             / 1000.0
         )
-        mask = cv2.imread(
-            str(devkit / "SegmentationClass" / f"{frame}.png"), cv2.IMREAD_COLOR
-        )
+        mask = imread(devkit / "SegmentationClass" / f"{frame}.png", cv2.IMREAD_COLOR)
         yield frame, encode_depth(depth, 1000), encode_label(label(mask, lut))
 
 

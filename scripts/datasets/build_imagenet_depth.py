@@ -29,24 +29,20 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+EXPECTED = {"train": 1_281_167, "validation": 50_000}
 _IMAGE = pa.struct([("bytes", pa.binary()), ("path", pa.string())])
-SCHEMA = pa.schema(
-    [("id", pa.string()), ("label", pa.int64()), ("depth", _IMAGE)]
-).with_metadata(
-    {
-        "huggingface": json.dumps(
-            {
-                "info": {
-                    "features": {
-                        "id": {"dtype": "string", "_type": "Value"},
-                        "label": {"names": None, "_type": "ClassLabel"},
-                        "depth": {"_type": "Image"},
-                    }
-                }
-            }
-        )
+
+
+def make_schema(class_names):
+    """Parquet schema; the metadata lets the `datasets` library and the Hub viewer decode labels and PNGs."""
+    features = {
+        "id": {"dtype": "string", "_type": "Value"},
+        "label": {"names": list(class_names), "_type": "ClassLabel"},
+        "depth": {"_type": "Image"},
     }
-)
+    return pa.schema(
+        [("id", pa.string()), ("label", pa.int64()), ("depth", _IMAGE)]
+    ).with_metadata({"huggingface": json.dumps({"info": {"features": features}})})
 
 
 def _sample(path: str):
@@ -61,7 +57,7 @@ def _sample(path: str):
 
 
 def _write_shard(job):
-    files, out_path, wnid_to_idx = job
+    files, out_path, wnid_to_idx, schema = job
     rows = [_sample(f) for f in files]
     table = pa.table(
         {
@@ -69,14 +65,16 @@ def _write_shard(job):
             "label": [wnid_to_idx[r[1]] for r in rows],
             "depth": [{"bytes": r[2], "path": None} for r in rows],
         },
-        schema=SCHEMA,
+        schema=schema,
     )
     pq.write_table(table, out_path, row_group_size=256)
     return len(rows)
 
 
 def main():
-    p = argparse.ArgumentParser()
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     p.add_argument(
         "--src", required=True, help="directory with train_images*/ and val_images/"
     )
@@ -98,6 +96,8 @@ def main():
     wnids = sorted(names)
     assert len(wnids) == 1000
     wnid_to_idx = {w: i for i, w in enumerate(wnids)}
+    class_names = [names[w] for w in wnids]
+    schema = make_schema(class_names)
 
     out = Path(args.out)
     (out / "data").mkdir(parents=True, exist_ok=True)
@@ -107,14 +107,25 @@ def main():
         .tolist(),
         "validation": sorted(glob.glob(f"{args.src}/val_images/*.npz")),
     }
+    for split, files in splits.items():
+        if len(files) != EXPECTED[split]:
+            raise SystemExit(
+                f"{split}: {len(files)} .npz files in {args.src}, expected {EXPECTED[split]}: "
+                "incomplete generate_imagenet_depth.py output?"
+            )
     counts = {}
     for split, files in splits.items():
+        for old in (out / "data").glob(
+            f"{split}-*.parquet"
+        ):  # shards of an earlier run
+            old.unlink()
         n_shards = -(-len(files) // args.shard_size)
         jobs = [
             (
                 files[i * args.shard_size : (i + 1) * args.shard_size],
                 out / "data" / f"{split}-{i:05d}-of-{n_shards:05d}.parquet",
                 wnid_to_idx,
+                schema,
             )
             for i in range(n_shards)
         ]
@@ -128,8 +139,10 @@ def main():
         "images, stored as uint16 (truncated) at the original image resolution. Larger = closer.",
         "num_classes": 1000,
         "wnids": wnids,
-        "class_names": [names[w].strip('"') for w in wnids],
+        "class_names": class_names,
         "splits": counts,
+        "license": "ImageNet terms of access (https://www.image-net.org/download.php); Depth Anything V2 Large "
+        "is CC-BY-NC-4.0",
         "citation": json.loads((Path(__file__).parent / "citations.json").read_text())[
             "imagenet_depth"
         ],

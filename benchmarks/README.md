@@ -106,7 +106,8 @@ OFFSED does not define a split; ours is in `scripts/datasets/splits/offsed_{trai
 <summary><b>ImageNet-1k-Depth from ImageNet</b></summary>
 
 Instead of downloading the gated copy, the depth maps can be regenerated from your ImageNet-1k copy with Depth
-Anything V2 (one forward pass per image; `--shard i --num-shards n` splits the work over GPUs):
+Anything V2 (one forward pass per image; `--shard i --num-shards n` splits the work over GPUs). Both splits are
+expected in `<wnid>/` class folders (`<imagenet>/train/<wnid>/*.JPEG`, `<imagenet>/val/<wnid>/*.JPEG`):
 
 ```bash
 python scripts/datasets/generate_imagenet_depth.py --dav2-repo <Depth-Anything-V2 clone> \
@@ -195,4 +196,4 @@ set has 41 images).
 ## Citation
 
 If you use the benchmarks, please cite DeFM (see the [main README](../README.md#-citation)) and the datasets you use;
-their BibTeX entries are in `scripts/datasets/citations.json` and in each dataset's `meta.json`.
+their citations are in `scripts/datasets/citations.json` and in each dataset's `meta.json`.
