@@ -3,6 +3,7 @@
 # This source code is licensed under the Apache License, Version 2.0
 # found in the LICENSE file in the root directory of this source tree.
 
+import json
 import torch
 import pathlib
 from omegaconf import OmegaConf
@@ -23,12 +24,34 @@ def get_defm_config(model_name: str):
     return OmegaConf.load(model_path)
 
 
+def get_hub_config(model_name: str):
+    """Architecture config of a variant from the Hub's root config.json.
+
+    config.json is the file the Hugging Face Hub counts as a model download, so fetching it here is what makes
+    downloads of the DeFM weights show up on the model page. Falls back to the packaged YAML when offline.
+    """
+    try:
+        path = hf_hub_download(repo_id=HF_REPO_ID, filename="config.json")
+        with open(path) as f:
+            return OmegaConf.create(json.load(f)["variants"][model_name])
+    except Exception as e:  # offline, or a variant not listed in the Hub config
+        print(
+            f"Could not read {model_name} from the {HF_REPO_ID} config.json ({e}); using the packaged config."
+        )
+        return get_defm_config(model_name)
+
+
 def create_defm_model(model_name, pretrained=False, pretrained_path=None):
     """
-    Builds the DeFM model and loads weights.
-    Supports ViT-L/14 (307M) and ViT-S/14 (22M) variants
+    Builds a DeFM model (any variant in defm/configs, e.g. defm_vit_l14, defm_resnet50) and loads its weights:
+    from pretrained_path if given, otherwise from the Hugging Face Hub. The CNN backbones are built without
+    torchvision's ImageNet weights, so pretrained=False gives a randomly initialized model.
     """
-    cfg = get_defm_config(model_name)
+    if not (BASE_PATH / "configs" / f"{model_name}.yaml").exists():
+        available = sorted(p.stem for p in (BASE_PATH / "configs").glob("*.yaml"))
+        raise ValueError(f"Unknown DeFM model {model_name!r}; available: {available}")
+    downloading = pretrained and not pretrained_path
+    cfg = get_hub_config(model_name) if downloading else get_defm_config(model_name)
 
     if "vit" in cfg.arch:
         vit_kwargs = dict(
@@ -50,11 +73,17 @@ def create_defm_model(model_name, pretrained=False, pretrained_path=None):
         model = vits.__dict__[cfg.arch](**vit_kwargs)
 
     elif "resnet" in cfg.arch:
-        model = ResNetBiFPN(backbone_name=cfg.arch, out_channels=cfg.out_channels)
+        model = ResNetBiFPN(
+            backbone_name=cfg.arch, out_channels=cfg.out_channels, pretrained=False
+        )
     elif "regnet" in cfg.arch:
-        model = RegNetBiFPN(backbone_name=cfg.arch, out_channels=cfg.out_channels)
+        model = RegNetBiFPN(
+            backbone_name=cfg.arch, out_channels=cfg.out_channels, pretrained=False
+        )
     elif "efficientnet" in cfg.arch:
-        model = EfficientNetBiFPN(backbone_name=cfg.arch, out_channels=cfg.out_channels)
+        model = EfficientNetBiFPN(
+            backbone_name=cfg.arch, out_channels=cfg.out_channels, pretrained=False
+        )
     else:
         raise ValueError(f"Unsupported architecture: {cfg.arch}")
 

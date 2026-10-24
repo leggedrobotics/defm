@@ -3,13 +3,9 @@
 # This source code is licensed under the Apache License, Version 2.0
 # found in the LICENSE file in the root directory of this source tree.
 
-import pathlib
 from defm.model_factory import create_defm_model
 
 dependencies = ["torch", "omegaconf", "huggingface_hub", "torchvision", "numpy"]
-
-# Define the root directory of this repository
-ROOT_DIR = pathlib.Path(__file__).parent.resolve()
 
 
 # Vision Transformer Variants
@@ -19,7 +15,7 @@ def defm_vit_s14(pretrained=True, **kwargs):
 
 
 def defm_vit_l14(pretrained=True, **kwargs):
-    """DeFM ViT-L/14 (307M)"""
+    """DeFM ViT-L/14 (304M)"""
     return create_defm_model("defm_vit_l14", pretrained=pretrained, **kwargs)
 
 

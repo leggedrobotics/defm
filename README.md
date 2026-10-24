@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![PyTorch 2.4+](https://img.shields.io/badge/PyTorch-2.4+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/get-started/locally/)
 [![uv Managed](https://img.shields.io/badge/uv-managed-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-orange?style=for-the-badge)](https://huggingface.co/leggedrobotics/defm)
@@ -30,25 +30,29 @@ TL;DR - A DINO-style encoder, but for depth image inputs.
 
 ## 🛠️ Installation
 
-To use DeFM as a backbone in your own projects without cloning this repository, ensure you have the following prerequisites installed:
+To use DeFM as a backbone in your own projects, install the package from PyPI:
 ```bash
-pip install torch torchvision numpy huggingface_hub omegaconf
+pip install defm
 ```
-and directly jump to [Quick Start](#quick-start). Otherwise, below you can find instructions to install the DeFM module for using the notebooks or for local development.
+and directly jump to [Quick Start](https://github.com/leggedrobotics/defm#quick-start). Loading through TorchHub only needs `torch torchvision numpy huggingface_hub omegaconf`. Otherwise, below you can find instructions to install the DeFM module for using the notebooks or for local development.
+
+```bash
+git clone https://github.com/leggedrobotics/defm && cd defm
+```
 
 ### Using uv (Fastest)
 ```bash
 # Create and activate environment
-uv venv --python 3.10
+uv venv --python 3.11
 source .venv/bin/activate
 
-# Install dependencies and DeFM in editable mode
-uv pip install -e .
+# Install dependencies and DeFM in editable mode (with the notebook dependencies)
+uv pip install -e ".[notebooks]"
 ```
 
 ### Using standard pip
 ```bash
-pip install -e .
+pip install -e ".[notebooks]"
 ```
 
 ---
@@ -62,9 +66,17 @@ Load via **TorchHub** for easy integration:
 ```python
 import torch
 
-# Load the 307M Parameter Foundation Model
+# Load the 304M-parameter foundation model
 model = torch.hub.load('leggedrobotics/defm:main', 'defm_vit_l14', pretrained=True)
 model.eval().to("cuda")
+```
+
+or, with the `defm` package installed:
+
+```python
+from defm.model_factory import create_defm_model
+
+model = create_defm_model("defm_vit_l14", pretrained=True)  # weights from the Hugging Face Hub
 ```
 
 ### 2. Preprocessing
@@ -73,8 +85,8 @@ DeFM requires depth maps to be processed into our metric-aware 3-channel format.
 ```python
 from defm import preprocess_depth_image
 
-# Depth needs to be in meters (numpy array, tensor or PIL image)
-normalized_depth = preprocess_depth_image(metric_depth, target_size=518, patch_size=14)
+# Depth in meters: (H, W) numpy array, tensor or PIL image. target_size is an int (square) or (H, W).
+normalized_depth = preprocess_depth_image(metric_depth, target_size=518, patch_size=14).to("cuda")
 ```
 
 ### 3. Inference
@@ -87,13 +99,30 @@ spatial_tokens = output[0][0] # (B, C, H', W')
 class_token = output[0][1] # (B, C)
 ```
 
+The CNN models (`defm_resnet50`, `defm_efficientnet_b0`, ...) return a dict instead, and their input height and width
+must be multiples of 32:
+
+```python
+model = torch.hub.load('leggedrobotics/defm:main', 'defm_resnet50', pretrained=True).eval().to("cuda")
+normalized_depth = preprocess_depth_image(metric_depth, target_size=(224, 320)).to("cuda")
+
+with torch.no_grad():
+    output = model(normalized_depth)
+
+class_token = output["global_backbone"]  # (B, C)
+spatial_tokens = output["dense_bifpn"]["P4"]  # (B, C, H/16, W/16), the features distilled from the ViT
+```
+
+See `scripts/notebooks/` for more examples.
+
 ---
 
 ## 📂 Project Structure
 * `defm/`: Main package containing model factory, architectures, and utils.
-* `notebooks/`: Demo notebooks for **Semantic PCA Visualization** and **Inference Scripts** for CNNs and ViTs.
-* `classification/`: Scripts and packages to reproduce the classification results [TODO]
-* `segmentation/`: Scripts and packages to reproduce the segmentation results [TODO]
+* `scripts/notebooks/`: Demo notebooks for **Semantic PCA Visualization** and **Inference Scripts** for CNNs and ViTs.
+* `benchmarks/`: Classification and segmentation benchmarks for DeFM and the baselines (see [Benchmarks](https://github.com/leggedrobotics/defm#benchmarks)).
+* `scripts/datasets/`: Scripts to build the benchmark datasets from their official releases.
+* `tests/`: Smoke tests (`pytest tests`).
 
 ---
 
@@ -103,18 +132,37 @@ The following table provides a comprehensive overview of the DeFM model family, 
 
 | Model | Params (M) | RTX 4090 BS-128 (ms) | Jetson Orin (ms) | Top-5 KNN (%) | Linear Prob (%) | Checkpoint |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **DeFM ViT-L/14** | 307.0 | 624.91 | 72.82 | 84.79 | 71.72 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_l14.pth) |
-| **DeFM ViT-S/14** | 22.1 | 63.76 | 11.92 | 78.06 | 61.54 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_s14.pth) |
-| **DeFM ResNet-50** | 26.2 | 69.39 | 17.79 | 77.63 | 61.54 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet50.pth) |
-| **DeFM ResNet-34** | 21.8 | 33.08 | 13.54 | 72.72 | 54.39 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet34.pth) |
-| **DeFM ResNet-18** | 11.7 | 21.06 | 8.67 | 69.69 | 50.58 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet18.pth) |
-| **DeFM EfficientNet-B6** | 28.98 | 150.98 | 54.11 | 77.81 | 59.23 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b6.pth) |
-| **DeFM EfficientNet-B4** | 14.16 | 86.51 | 39.67 | 74.74 | 54.73 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b4.pth) |
-| **DeFM EfficientNet-B2** | 4.95 | 46.12 | 28.37 | 71.51 | 50.32 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b2.pth) |
-| **DeFM EfficientNet-B0** | 3.01 | 29.39 | 21.04 | 67.98 | 46.17 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b0.pth) |
-| **DeFM RegNetY-1.6GF** | 12.4 | 44.25 | 41.82 | 76.21 | 57.28 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_1_6gf.pth) |
-| **DeFM RegNetY-800MF** | 6.3 | 25.21 | 24.16 | 74.91 | 57.03 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_800mf.pth) |
-| **DeFM RegNetY-400MF** | 4.1 | 17.27 | 25.17 | 72.87 | 50.51 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_400mf.pth) |
+| **DeFM ViT-L/14** | 303.7 | 624.91 | 72.82 | 85.42 | 72.76 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_l14.pth) |
+| **DeFM ViT-S/14** | 21.6 | 63.76 | 11.92 | 79.37 | 62.74 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_vit_s14.pth) |
+| **DeFM ResNet-50** | 26.2 | 69.39 | 17.79 | 78.93 | 62.56 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet50.pth) |
+| **DeFM ResNet-34** | 23.3 | 33.08 | 13.54 | 73.84 | 54.78 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet34.pth) |
+| **DeFM ResNet-18** | 11.7 | 21.06 | 8.67 | 70.93 | 51.57 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_resnet18.pth) |
+| **DeFM EfficientNet-B6** | 28.98 | 150.98 | 54.11 | 79.30 | 60.70 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b6.pth) |
+| **DeFM EfficientNet-B4** | 14.16 | 86.51 | 39.67 | 76.45 | 56.24 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b4.pth) |
+| **DeFM EfficientNet-B2** | 4.95 | 46.12 | 28.37 | 72.89 | 51.64 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b2.pth) |
+| **DeFM EfficientNet-B0** | 3.01 | 29.39 | 21.04 | 69.54 | 47.17 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_efficientnet_b0.pth) |
+| **DeFM RegNetY-1.6GF** | 12.4 | 44.25 | 41.82 | 77.96 | 58.88 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_1_6gf.pth) |
+| **DeFM RegNetY-800MF** | 6.3 | 25.21 | 24.16 | 76.43 | 58.62 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_800mf.pth) |
+| **DeFM RegNetY-400MF** | 4.1 | 17.27 | 25.17 | 74.43 | 51.80 | [Download](https://huggingface.co/leggedrobotics/defm/resolve/main/defm_regnet_y_400mf.pth) |
+---
+
+<a id="benchmarks"></a>
+## 📏 Benchmarks
+
+[`benchmarks/`](https://github.com/leggedrobotics/defm/blob/main/benchmarks/README.md) reproduces the linear-probe evaluations of the paper for DeFM and all image
+baselines (DINOv2, DINOv3, Depth Anything V2, C-RADIOv3, Theia), loading every model from its official
+Hugging Face weights:
+
+```bash
+pip install -e ".[benchmarks]"
+python -m benchmarks.segmentation --encoder defm_vit_l14 --dataset tartanground   # ScanNet, SUN RGB-D, OFFSED, TartanGround, GraspNet
+python -m benchmarks.classification --encoder defm_vit_s14 --eval knn linear     # ImageNet-1k-Depth
+```
+
+TartanGround, GraspNet-1Billion and ImageNet-1k-Depth are downloaded from the Hub; ScanNet, SUN RGB-D and OFFSED
+are built from their official releases with the scripts in `scripts/datasets/`. See the
+[benchmark README](https://github.com/leggedrobotics/defm/blob/main/benchmarks/README.md) for datasets, protocol and results.
+
 ---
 
 ## 📖 Citation

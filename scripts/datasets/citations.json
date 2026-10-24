@@ -1,0 +1,8 @@
+{
+  "scannet": "@inproceedings{dai2017scannet, title={ScanNet: Richly-annotated 3D Reconstructions of Indoor Scenes}, author={Dai, Angela and Chang, Angel X. and Savva, Manolis and Halber, Maciej and Funkhouser, Thomas and Nie{\\ss}ner, Matthias}, booktitle={CVPR}, year={2017}}",
+  "sunrgbd": "@inproceedings{song2015sun, title={SUN RGB-D: A RGB-D Scene Understanding Benchmark Suite}, author={Song, Shuran and Lichtenberg, Samuel P. and Xiao, Jianxiong}, booktitle={CVPR}, year={2015}} (please also cite NYU Depth v2, B3DO and SUN3D)",
+  "offsed": "@inproceedings{neigel2021offsed, title={OFFSED: Off-Road Semantic Segmentation Dataset}, author={Neigel, Peter and Rambach, Jason and Stricker, Didier}, booktitle={VISIGRAPP (Volume 4)}, year={2021}}",
+  "graspnet": "@inproceedings{fang2020graspnet, title={GraspNet-1Billion: A Large-Scale Benchmark for General Object Grasping}, author={Fang, Hao-Shu and Wang, Chenxi and Gou, Minghao and Lu, Cewu}, booktitle={CVPR}, year={2020}}",
+  "tartanground": "@inproceedings{patel2025tartanground, title={TartanGround: A Large-Scale Dataset for Ground Robot Perception and Navigation}, author={Patel, Manthan and Yang, Fan and Qiu, Yuheng and others}, booktitle={IROS}, year={2025}}",
+  "imagenet_depth": "@inproceedings{deng2009imagenet, title={ImageNet: A Large-Scale Hierarchical Image Database}, author={Deng, Jia and Dong, Wei and Socher, Richard and Li, Li-Jia and Li, Kai and Fei-Fei, Li}, booktitle={CVPR}, year={2009}} + @inproceedings{yang2024depthv2, title={Depth Anything V2}, author={Yang, Lihe and Kang, Bingyi and Huang, Zilong and Zhao, Zhen and Xu, Xiaogang and Feng, Jiashi and Zhao, Hengshuang}, booktitle={NeurIPS}, year={2024}}"
+}
