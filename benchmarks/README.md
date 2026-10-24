@@ -14,9 +14,12 @@ git clone https://github.com/leggedrobotics/defm && cd defm
 pip install -e ".[benchmarks]"   # run everything below from the repository root
 ```
 
-A GPU is required. ViT-L encoders need about 24 GB of GPU memory; the segmentation feature cache needs up to ~80 GB
-of disk for ScanNet with a ViT-L (`--cache-dir`). Some third-party weights are gated on the Hub: accept the license
-on the model page and log in with `hf auth login` (DINOv3: `facebook/dinov3-*`).
+A GPU is required. Everything was run on 24 GB GPUs, except C-RADIOv3 classification (40 GB: its kNN keeps 16 GB of
+train features on the GPU). DINOv3 runs in bfloat16, which GPUs older than Ampere only emulate (several times
+slower). Classification needs ~32 GB of RAM with 16 loader workers (`--workers`) and 75 GB of disk for
+ImageNet-1k-Depth; the segmentation feature cache needs up to ~80 GB of disk for ScanNet with a ViT-L (`--cache-dir`).
+Some third-party weights are gated on the Hub: accept the license on the model page and log in with `hf auth login`
+(DINOv3: `facebook/dinov3-*`).
 
 ## Encoders
 
