@@ -45,7 +45,8 @@ def main():
     p.add_argument(
         "--cache-dir",
         default=None,
-        help="feature cache, kept and reused by later runs (default: a temporary directory, removed at the end)",
+        help="feature cache, kept and reused by later runs; needs up to ~80 GB (ScanNet, ViT-L) "
+        "(default: a temporary directory under $TMPDIR, often /tmp, removed at the end)",
     )
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--output", default="results/segmentation")
