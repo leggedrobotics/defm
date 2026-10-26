@@ -313,6 +313,7 @@ class RadioEncoder(nn.Module):
             version=version,
             progress=True,
             skip_validation=True,
+            trust_repo=True,  # pinned commit; avoids the interactive prompt in batch jobs
         )
         self.patch_size = self.pad_multiple = self.model.patch_size
         self.embed_dim = self.model.embed_dim
