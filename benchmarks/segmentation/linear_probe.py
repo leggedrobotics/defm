@@ -25,6 +25,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from benchmarks.encoders import center_pad
 from benchmarks.segmentation.datasets import IGNORE_INDEX, SegmentationDataset
+from defm.utils import get_default_device
 
 
 @torch.no_grad()
@@ -49,10 +50,11 @@ def cache_features(
         pin_memory=True,
     )
     feats = labels = None
+    device = next(encoder.parameters()).device
     i, t0 = 0, time.time()
     for x, y in loader:
-        x, _ = center_pad(x.cuda(non_blocking=True), encoder.pad_multiple)
-        with torch.autocast("cuda", dtype=torch.float16):
+        x, _ = center_pad(x.to(device, non_blocking=True), encoder.pad_multiple)
+        with torch.autocast(device.type, dtype=torch.float16):
             _, dense = encoder(x)
         if feats is None:
             n = len(dataset)
@@ -163,7 +165,9 @@ def train_and_evaluate(
     weight_decay=1e-4,
     workers=8,
     seed=42,
+    device=None,
 ):
+    device = torch.device(device) if device else get_default_device()
     torch.manual_seed(seed)
     np.random.seed(seed)
     head = LinearSegHead(
@@ -172,7 +176,7 @@ def train_and_evaluate(
         image_size,
         encoder.patch_size,
         encoder.pad_multiple,
-    ).cuda()
+    ).to(device)
     g = torch.Generator().manual_seed(seed)
     train_loader = DataLoader(
         _Cached(*train_cache),
@@ -198,13 +202,16 @@ def train_and_evaluate(
         steps_per_epoch=len(train_loader),
         pct_start=warmup_epochs / epochs,
     )
-    scaler = torch.amp.GradScaler("cuda")
+    scaler = torch.amp.GradScaler(device.type)
 
     for epoch in range(epochs):
         head.train()
         for tokens, y in train_loader:
-            tokens, y = tokens.cuda(non_blocking=True), y.cuda(non_blocking=True)
-            with torch.autocast("cuda", dtype=torch.float16):
+            tokens, y = (
+                tokens.to(device, non_blocking=True),
+                y.to(device, non_blocking=True),
+            )
+            with torch.autocast(device.type, dtype=torch.float16):
                 loss = F.cross_entropy(head(tokens), y, ignore_index=IGNORE_INDEX)
             optimizer.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
@@ -216,11 +223,14 @@ def train_and_evaluate(
         print(f"    epoch {epoch + 1}/{epochs}  loss {loss.item():.4f}", flush=True)
 
     head.eval()
-    conf = torch.zeros(num_classes, num_classes, dtype=torch.long, device="cuda")
+    conf = torch.zeros(num_classes, num_classes, dtype=torch.long, device=device)
     with torch.no_grad():
         for tokens, y in test_loader:
-            tokens, y = tokens.cuda(non_blocking=True), y.cuda(non_blocking=True)
-            with torch.autocast("cuda", dtype=torch.float16):
+            tokens, y = (
+                tokens.to(device, non_blocking=True),
+                y.to(device, non_blocking=True),
+            )
+            with torch.autocast(device.type, dtype=torch.float16):
                 pred = head(tokens).argmax(1)
             keep = y != IGNORE_INDEX
             conf += torch.bincount(

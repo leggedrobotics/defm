@@ -22,6 +22,7 @@ import torch
 from benchmarks.encoders import build_encoder, list_encoders
 from benchmarks.segmentation.datasets import BENCHMARKS, SegmentationDataset
 from benchmarks.segmentation.linear_probe import cache_features, train_and_evaluate
+from defm.utils import get_default_device
 
 
 def main():
@@ -48,12 +49,18 @@ def main():
         help="feature cache, kept and reused by later runs; needs up to ~80 GB (ScanNet, ViT-L) "
         "(default: a temporary directory under $TMPDIR, often /tmp, removed at the end)",
     )
+    p.add_argument(
+        "--device",
+        default=None,
+        help="torch device, e.g. cuda, xpu, xpu:1 or cpu (default: CUDA, then Intel XPU, then CPU)",
+    )
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--output", default="results/segmentation")
     args = p.parse_args()
 
     bench = BENCHMARKS[args.dataset]
-    encoder = build_encoder(args.encoder).cuda()
+    device = torch.device(args.device) if args.device else get_default_device()
+    encoder = build_encoder(args.encoder).to(device)
     cache_root = (
         Path(args.cache_dir or tempfile.mkdtemp(prefix="defm_seg_"))
         / args.dataset
@@ -82,7 +89,8 @@ def main():
             embed_dim=caches["train"][0].shape[-1],
         )
         del encoder
-        torch.cuda.empty_cache()
+        if device.type != "cpu":
+            getattr(torch, device.type).empty_cache()
 
         runs = {}
         for lr in args.lrs:
@@ -97,6 +105,7 @@ def main():
                 epochs=bench.epochs,
                 warmup_epochs=bench.warmup_epochs,
                 workers=args.workers,
+                device=device,
             )
             print(f"  lr={lr:g}: mIoU {runs[f'{lr:g}']['miou']:.2f}", flush=True)
 

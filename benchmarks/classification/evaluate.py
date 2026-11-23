@@ -34,9 +34,10 @@ def extract_global(encoder, ds, batch_size, workers, dtype):
     # Filled in place on the CPU and moved to the GPU once: concatenating batches would briefly hold two copies
     # (2 x 16 GB for RADIO's 3072-d features on ImageNet train).
     feats, labels, n, t0 = None, torch.empty(len(ds), dtype=torch.long), 0, time.time()
+    device = next(encoder.parameters()).device
     for i, (x, y) in enumerate(_loader(ds, batch_size, workers)):
-        with torch.autocast("cuda", dtype=dtype, enabled=dtype != torch.float32):
-            g, _ = encoder(x.cuda(non_blocking=True))
+        with torch.autocast(device.type, dtype=dtype, enabled=dtype != torch.float32):
+            g, _ = encoder(x.to(device, non_blocking=True))
         if feats is None:
             feats = torch.empty(len(ds), g.shape[1])
         feats[n : n + len(y)] = F.normalize(g.float(), dim=1).cpu()
@@ -48,7 +49,7 @@ def extract_global(encoder, ds, batch_size, workers, dtype):
                 flush=True,
             )
     assert n == len(ds), (n, len(ds))
-    return feats.cuda(), labels.cuda()
+    return feats.to(device), labels.to(device)
 
 
 @torch.no_grad()
@@ -146,6 +147,7 @@ def run_linear(
     lrs=LINEAR_LRS,
 ):
     n_options = [1] if encoder.is_cnn else [1, 4]
+    device = next(encoder.parameters()).device
     train = ImageNetDepth(
         "train",
         encoder.input_norm,
@@ -159,10 +161,10 @@ def run_linear(
 
     with (
         torch.no_grad(),
-        torch.autocast("cuda", dtype=dtype, enabled=dtype != torch.float32),
+        torch.autocast(device.type, dtype=dtype, enabled=dtype != torch.float32),
     ):
         probe = encoder.last_blocks(
-            torch.zeros(2, 3, 224, 224, device="cuda"), max(n_options)
+            torch.zeros(2, 3, 224, 224, device=device), max(n_options)
         )
     dims = {
         (n, avg): _linear_input(probe, n, avg).shape[-1]
@@ -170,7 +172,7 @@ def run_linear(
         for avg in (False, True)
     }
 
-    heads = LinearHeads(dims, 1000, lrs, batch_size).cuda()
+    heads = LinearHeads(dims, 1000, lrs, batch_size).to(device)
     optimizer = torch.optim.SGD(heads.param_groups(), momentum=0.9, weight_decay=0.0)
     # Each loader worker ends its share of an epoch with a partial batch, so an epoch can run up to `workers` more
     # steps than this; the cosine stays at 0 for those instead of rising again.
@@ -184,10 +186,12 @@ def run_linear(
     for epoch in range(epochs):
         train.set_epoch(epoch)
         for x, y in _loader(train, batch_size, workers):
-            x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
+            x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
             with (
                 torch.no_grad(),
-                torch.autocast("cuda", dtype=dtype, enabled=dtype != torch.float32),
+                torch.autocast(
+                    device.type, dtype=dtype, enabled=dtype != torch.float32
+                ),
             ):
                 blocks = encoder.last_blocks(x, max_n)
             loss = sum(F.cross_entropy(o, y) for o in heads(blocks))
@@ -203,12 +207,14 @@ def run_linear(
                     flush=True,
                 )
 
-    correct, n = torch.zeros(len(heads.heads), device="cuda"), 0
+    correct, n = torch.zeros(len(heads.heads), device=device), 0
     with torch.no_grad():
         for x, y in _loader(val, batch_size, workers):
             n += len(y)
-            x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
-            with torch.autocast("cuda", dtype=dtype, enabled=dtype != torch.float32):
+            x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
+            with torch.autocast(
+                device.type, dtype=dtype, enabled=dtype != torch.float32
+            ):
                 blocks = encoder.last_blocks(x, max_n)
             correct += torch.stack(
                 [(o.argmax(1) == y).sum() for o in heads(blocks)]

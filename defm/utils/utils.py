@@ -10,6 +10,16 @@ from typing import Union, Tuple, Optional
 import torchvision.transforms.v2 as tt
 import math
 
+
+def get_default_device() -> torch.device:
+    """Best available accelerator: CUDA, then Intel XPU, then CPU."""
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    if hasattr(torch, "xpu") and torch.xpu.is_available():
+        return torch.device("xpu")
+    return torch.device("cpu")
+
+
 DEFM_MEAN = [0.248880, 0.495620, 0.492858]
 DEFM_STD = [0.139357, 0.271314, 0.297177]
 

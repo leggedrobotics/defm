@@ -21,6 +21,9 @@ segmentation feature cache needs up to ~80 GB of disk for ScanNet with a ViT-L (
 weights are gated on the Hub: accept the license on the model page and log in with `hf auth login`
 (DINOv3: `facebook/dinov3-*`).
 
+Intel GPUs work too, with the XPU build of PyTorch (see the [main README](../README.md)): both benchmarks pick CUDA,
+then XPU, then CPU, and `--device` (for example `--device xpu`) chooses one.
+
 ## Encoders
 
 | `--encoder` | Model | Weights |
