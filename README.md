@@ -55,6 +55,31 @@ uv pip install -e ".[notebooks]"
 pip install -e ".[notebooks]"
 ```
 
+### Run on Intel GPU (XPU)
+DeFM runs on Intel GPUs (for example Intel Arc Pro B60, or the integrated GPU of Intel Core Ultra Series 3
+processors) with the XPU build of PyTorch. Set up the Intel GPU driver first, as described in PyTorch's
+[Getting Started on Intel GPU](https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html) guide: with an outdated
+driver, PyTorch can crash at the first XPU call.
+
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/xpu
+pip install -e .
+```
+
+Then move the model and the input to `"xpu"`:
+
+```python
+from defm.model_factory import create_defm_model
+
+model = create_defm_model("defm_vit_l14", pretrained=True).eval().to("xpu")
+```
+
+`defm.utils.get_default_device()` returns CUDA, then XPU, then CPU. The notebooks and both benchmarks use it, and
+the benchmarks take `--device` to choose one
+(`python -m benchmarks.segmentation --encoder defm_vit_l14 --dataset tartanground --device xpu`). `xformers` is
+optional: without it the model uses its plain PyTorch attention. `scripts/datasets/generate_imagenet_depth.py`
+still needs CUDA.
+
 ---
 
 <a id="quick-start"></a>

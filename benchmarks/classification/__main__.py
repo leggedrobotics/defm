@@ -13,8 +13,11 @@ import json
 import time
 from pathlib import Path
 
+import torch
+
 from benchmarks.classification.evaluate import run_knn, run_linear
 from benchmarks.encoders import build_encoder, list_encoders
+from defm.utils import get_default_device
 
 
 def main():
@@ -31,11 +34,17 @@ def main():
         help="local copy (<root>/imagenet_depth); default: the Hub dataset",
     )
     p.add_argument("--batch-size", type=int, default=256)
+    p.add_argument(
+        "--device",
+        default=None,
+        help="torch device, e.g. cuda, xpu, xpu:1 or cpu (default: CUDA, then Intel XPU, then CPU)",
+    )
     p.add_argument("--workers", type=int, default=16)
     p.add_argument("--output", default="results/classification")
     args = p.parse_args()
 
-    encoder = build_encoder(args.encoder).cuda()
+    device = torch.device(args.device) if args.device else get_default_device()
+    encoder = build_encoder(args.encoder).to(device)
     result, minutes = {"encoder": args.encoder}, {}
     if "knn" in args.eval:
         t0 = time.time()
